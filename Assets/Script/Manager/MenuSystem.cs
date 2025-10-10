@@ -12,7 +12,9 @@ public class MenuSystem : MonoBehaviour
    public void Quit()
    {
       Application.Quit();
-      UnityEditor.EditorApplication.isPlaying = false; // tengo que sacarlo al buildear
+#if UNITY_EDITOR
+      UnityEditor.EditorApplication.isPlaying = false; // ya NO tengo que sacarlo al buildear
+#endif
       
    }
    

@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3d95a16da8c3cf0468272845cafc875b, type: 3}
-  m_Name: New Ranged Attack SO
+  m_Name: Ranged
   m_EditorClassIdentifier: Assembly-CSharp::RangedAttackSO
-  abilityName: Projectile
+  abilityName: ProjectilesNormales
   icon: {fileID: 0}
   projectilePrefab: {fileID: 3318043773415785723, guid: 7b6cc435699a0a949a5aeec089532b58, type: 3}
   projectileSpeed: 20
