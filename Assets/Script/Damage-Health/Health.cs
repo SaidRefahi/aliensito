@@ -1,81 +1,72 @@
 using UnityEngine;
 using System;
 
-[System.Serializable]
 public class Health : MonoBehaviour
 {
     [SerializeField] private float maxHealth = 100f;
-    [SerializeField] private float currentHealth;
     [SerializeField] private bool destroyOnDeath = true;
     
-    public static event Action<GameObject> OnActorDeath;
+    // --- LÍNEA AÑADIDA ---
+    [Header("Loot")]
+    [Tooltip("Arrastra aquí el Prefab del material genético que debe soltar al morir.")]
+    [SerializeField] private GameObject geneticMaterialPrefab;
+    // ---------------------
+
+    private float currentHealth;
     
-    // Nuevos eventos para el sistema de UI
-    public event Action<float, float> OnHealthChanged; // (currentHealth, maxHealth)
+    public event Action<float, float> OnHealthChanged;
     public event Action OnDeath;
     
     private bool hasDied = false;
 
-    private void Start()
+    private void Awake()
     {
         currentHealth = maxHealth;
-        // Notificar el valor inicial
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
-    //
+    private void Start()
+    {
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+    }
 
     public void TakeDamage(float damage)
     {
-        Debug.Log($"[v0] {gameObject.name} took {damage} damage. Health: {currentHealth} -> {currentHealth - damage}");
-        
+        if (hasDied) return;
+
+        float healthBeforeDamage = currentHealth;
         currentHealth -= damage;
         currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
         
-        // Notificar cambio de salud
+        Debug.Log($"<color=red>{gameObject.name} took {damage} damage.</color> Health: {healthBeforeDamage} -> {currentHealth}");
+
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
-        
-        CheckDeath();
-    }
 
-    public void Heal(float healAmount)
-    {
-        currentHealth += healAmount;
-        currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
-        
-        // Notificar cambio de salud
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
-    }
-
-    public bool IsDead()
-    {
-        return currentHealth <= 0f;
-    }
-
-    public float GetCurrentHealth()
-    {
-        return currentHealth;
-    }
-
-    public float GetMaxHealth()
-    {
-        return maxHealth;
-    }
-
-    private void CheckDeath()
-    {
-        if (currentHealth <= 0f && !hasDied)
+        if (currentHealth <= 0f)
         {
-            Debug.Log($"[v0] {gameObject.name} has died!");
-            
-            hasDied = true;
-            OnDeath?.Invoke();
-            OnActorDeath?.Invoke(gameObject);
-            
-            if (destroyOnDeath)
-            {
-                Destroy(gameObject);
-            }
+            Die();
         }
     }
+
+    private void Die()
+    {
+        hasDied = true;
+        OnDeath?.Invoke();
+        Debug.Log($"<color=grey>{gameObject.name} has died.</color>");
+
+        // --- LÓGICA AÑADIDA ---
+        // Si tiene un prefab de loot asignado, lo instancia en su posición.
+        if (geneticMaterialPrefab != null)
+        {
+            Instantiate(geneticMaterialPrefab, transform.position, Quaternion.identity);
+        }
+        // ---------------------
+        
+        if (destroyOnDeath)
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    public float GetCurrentHealth() => currentHealth;
+    public float GetMaxHealth() => maxHealth;
 }

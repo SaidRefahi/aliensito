@@ -111,7 +111,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": true
                 },
                 {
-                    ""name"": ""Melee"",
+                    ""name"": ""MeleeAttack"",
                     ""type"": ""Button"",
                     ""id"": ""6c2ab1b8-8984-453a-af3d-a3c78ae1679a"",
                     ""expectedControlType"": """",
@@ -120,7 +120,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Ranged"",
+                    ""name"": ""RangedAttack"",
                     ""type"": ""Button"",
                     ""id"": ""852140f2-7766-474d-8707-702459ba45f3"",
                     ""expectedControlType"": """",
@@ -320,7 +320,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";Gamepad"",
-                    ""action"": ""Melee"",
+                    ""action"": ""MeleeAttack"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -331,7 +331,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";Keyboard&Mouse"",
-                    ""action"": ""Melee"",
+                    ""action"": ""MeleeAttack"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -342,7 +342,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";Touch"",
-                    ""action"": ""Melee"",
+                    ""action"": ""MeleeAttack"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -353,7 +353,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Joystick"",
-                    ""action"": ""Melee"",
+                    ""action"": ""MeleeAttack"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -364,7 +364,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""XR"",
-                    ""action"": ""Melee"",
+                    ""action"": ""MeleeAttack"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -375,7 +375,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
-                    ""action"": ""Melee"",
+                    ""action"": ""MeleeAttack"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -386,7 +386,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
-                    ""action"": ""Ranged"",
+                    ""action"": ""RangedAttack"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -397,7 +397,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Gamepad"",
-                    ""action"": ""Ranged"",
+                    ""action"": ""RangedAttack"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -1042,8 +1042,8 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         m_Player = asset.FindActionMap("Player", throwIfNotFound: true);
         m_Player_Move = m_Player.FindAction("Move", throwIfNotFound: true);
         m_Player_Look = m_Player.FindAction("Look", throwIfNotFound: true);
-        m_Player_Melee = m_Player.FindAction("Melee", throwIfNotFound: true);
-        m_Player_Ranged = m_Player.FindAction("Ranged", throwIfNotFound: true);
+        m_Player_MeleeAttack = m_Player.FindAction("MeleeAttack", throwIfNotFound: true);
+        m_Player_RangedAttack = m_Player.FindAction("RangedAttack", throwIfNotFound: true);
         m_Player_Invisibility = m_Player.FindAction("Invisibility", throwIfNotFound: true);
         m_Player_Pause = m_Player.FindAction("Pause", throwIfNotFound: true);
         // UI
@@ -1141,8 +1141,8 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
     private List<IPlayerActions> m_PlayerActionsCallbackInterfaces = new List<IPlayerActions>();
     private readonly InputAction m_Player_Move;
     private readonly InputAction m_Player_Look;
-    private readonly InputAction m_Player_Melee;
-    private readonly InputAction m_Player_Ranged;
+    private readonly InputAction m_Player_MeleeAttack;
+    private readonly InputAction m_Player_RangedAttack;
     private readonly InputAction m_Player_Invisibility;
     private readonly InputAction m_Player_Pause;
     /// <summary>
@@ -1165,13 +1165,13 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// </summary>
         public InputAction @Look => m_Wrapper.m_Player_Look;
         /// <summary>
-        /// Provides access to the underlying input action "Player/Melee".
+        /// Provides access to the underlying input action "Player/MeleeAttack".
         /// </summary>
-        public InputAction @Melee => m_Wrapper.m_Player_Melee;
+        public InputAction @MeleeAttack => m_Wrapper.m_Player_MeleeAttack;
         /// <summary>
-        /// Provides access to the underlying input action "Player/Ranged".
+        /// Provides access to the underlying input action "Player/RangedAttack".
         /// </summary>
-        public InputAction @Ranged => m_Wrapper.m_Player_Ranged;
+        public InputAction @RangedAttack => m_Wrapper.m_Player_RangedAttack;
         /// <summary>
         /// Provides access to the underlying input action "Player/Invisibility".
         /// </summary>
@@ -1212,12 +1212,12 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Look.started += instance.OnLook;
             @Look.performed += instance.OnLook;
             @Look.canceled += instance.OnLook;
-            @Melee.started += instance.OnMelee;
-            @Melee.performed += instance.OnMelee;
-            @Melee.canceled += instance.OnMelee;
-            @Ranged.started += instance.OnRanged;
-            @Ranged.performed += instance.OnRanged;
-            @Ranged.canceled += instance.OnRanged;
+            @MeleeAttack.started += instance.OnMeleeAttack;
+            @MeleeAttack.performed += instance.OnMeleeAttack;
+            @MeleeAttack.canceled += instance.OnMeleeAttack;
+            @RangedAttack.started += instance.OnRangedAttack;
+            @RangedAttack.performed += instance.OnRangedAttack;
+            @RangedAttack.canceled += instance.OnRangedAttack;
             @Invisibility.started += instance.OnInvisibility;
             @Invisibility.performed += instance.OnInvisibility;
             @Invisibility.canceled += instance.OnInvisibility;
@@ -1241,12 +1241,12 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Look.started -= instance.OnLook;
             @Look.performed -= instance.OnLook;
             @Look.canceled -= instance.OnLook;
-            @Melee.started -= instance.OnMelee;
-            @Melee.performed -= instance.OnMelee;
-            @Melee.canceled -= instance.OnMelee;
-            @Ranged.started -= instance.OnRanged;
-            @Ranged.performed -= instance.OnRanged;
-            @Ranged.canceled -= instance.OnRanged;
+            @MeleeAttack.started -= instance.OnMeleeAttack;
+            @MeleeAttack.performed -= instance.OnMeleeAttack;
+            @MeleeAttack.canceled -= instance.OnMeleeAttack;
+            @RangedAttack.started -= instance.OnRangedAttack;
+            @RangedAttack.performed -= instance.OnRangedAttack;
+            @RangedAttack.canceled -= instance.OnRangedAttack;
             @Invisibility.started -= instance.OnInvisibility;
             @Invisibility.performed -= instance.OnInvisibility;
             @Invisibility.canceled -= instance.OnInvisibility;
@@ -1568,19 +1568,19 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnLook(InputAction.CallbackContext context);
         /// <summary>
-        /// Method invoked when associated input action "Melee" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "MeleeAttack" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnMelee(InputAction.CallbackContext context);
+        void OnMeleeAttack(InputAction.CallbackContext context);
         /// <summary>
-        /// Method invoked when associated input action "Ranged" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "RangedAttack" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnRanged(InputAction.CallbackContext context);
+        void OnRangedAttack(InputAction.CallbackContext context);
         /// <summary>
         /// Method invoked when associated input action "Invisibility" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
