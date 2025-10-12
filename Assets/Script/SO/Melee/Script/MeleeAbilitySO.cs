@@ -1,58 +1,65 @@
 using UnityEngine;
+using System.Linq; // Necesario para LINQ
 
 public abstract class MeleeAbilitySO : AbilitySO, IAimable
 {
-    [Header("Core")]
-    public float damage = 10f;
-    public float range = 1.5f;
+    [Header("Melee Settings")]
+    public float damage = 15f;
+    public float range = 2f;
+    public LayerMask targetLayers;
+    public float criticalDamageMultiplier = 2f; // Daño x2 en un crítico
 
-    [Header("Targeting")]
-    public LayerMask targetLayers = ~0;
-    
     public Transform aimSource { get; set; }
 
     public override void Execute(GameObject user)
     {
-        Debug.Log($"Executing Melee Ability: {abilityName} from {user.name}");
-        PerformMelee(user, damage);
+        PerformMelee(user);
     }
 
-    protected void PerformMelee(GameObject user, float finalDamage)
+    public virtual void PerformMelee(GameObject user)
     {
-        Transform source = (aimSource != null) ? aimSource : user.transform;
-        
-        Collider[] hits = Physics.OverlapSphere(source.position, range, targetLayers);
+        // --- LÓGICA DE CRÍTICO ---
+        var effectManager = user.GetComponent<StatusEffectManager>();
+        var criticalBuff = effectManager?.FindEffect(typeof(CriticalBuff));
+        bool isCritical = criticalBuff != null;
 
-        if (hits.Length == 0)
+        float finalDamage = isCritical ? damage * criticalDamageMultiplier : damage;
+
+        if (isCritical)
         {
-            Debug.Log("Melee Attack: Missed. No colliders found in range.");
-            return;
+            Debug.Log("<color=orange>CRITICAL HIT!</color>");
+            // Consumimos el buff para que solo se use una vez.
+            effectManager.RemoveEffect(criticalBuff);
         }
+        // -------------------------
 
-        Debug.Log($"Melee Attack: Hit {hits.Length} colliders.");
+        Transform source = (aimSource != null) ? aimSource : user.transform;
+        Collider[] hits = Physics.OverlapSphere(source.position, range, targetLayers);
 
         foreach (var hit in hits)
         {
             if (hit.gameObject == user) continue;
-
             if (hit.TryGetComponent<Health>(out Health health))
             {
-                Debug.Log($"<color=green>Melee Attack: Dealing {finalDamage} damage to {hit.name}.</color>");
                 health.TakeDamage(finalDamage);
-            }
-            else
-            {
-                Debug.Log($"Melee Attack: Hit {hit.name}, but it has no Health component.");
             }
         }
     }
 
+    // --- BLOQUE DE GIZMOS MOVIDO AQUÍ DENTRO ---
 #if UNITY_EDITOR
     public void DrawGizmos(Transform userTransform)
     {
         if (userTransform == null) return;
+        
+        // Usamos aimSource si existe para que el gizmo se dibuje en el lugar correcto
+        Transform source = (aimSource != null) ? aimSource : userTransform;
+
         UnityEditor.Handles.color = new Color(1f, 0f, 0f, 0.2f);
-        UnityEditor.Handles.DrawSolidArc(userTransform.position, Vector3.up, userTransform.forward, 360, range);
+        UnityEditor.Handles.DrawSolidArc(source.position, Vector3.up, source.forward, 360, range);
+        
+        UnityEditor.Handles.color = Color.red;
+        UnityEditor.Handles.DrawWireArc(source.position, Vector3.up, source.forward, 360, range);
     }
 #endif
 }

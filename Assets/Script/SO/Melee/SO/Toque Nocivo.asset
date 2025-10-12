@@ -9,14 +9,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8cc634458bda26f4190c6a40cacd52db, type: 3}
-  m_Name: Orgullo Racial
-  m_EditorClassIdentifier: Assembly-CSharp::MeleeOrgulloRacialSO
-  abilityName: Orgullo Racial
+  m_Script: {fileID: 11500000, guid: 666a6b702c5ac4f499471f689ab5ff37, type: 3}
+  m_Name: Toque Nocivo
+  m_EditorClassIdentifier: Assembly-CSharp::MeleeToqueNocivoSO
+  abilityName: 
   icon: {fileID: 0}
-  damage: 24
-  range: 2.5
+  damage: 15
+  range: 2
   targetLayers:
     serializedVersion: 2
     m_Bits: 128
   criticalDamageMultiplier: 2
+  poisonDamagePerSecond: 20
+  poisonDuration: 5

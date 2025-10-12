@@ -1,32 +1,43 @@
 using UnityEngine;
+using System.Linq;
 
-[CreateAssetMenu(menuName = "Abilities/RangedAttack")]
-public class RangedAttackSO : AbilitySO, IAimable // <-- 1. "Firma el contrato" IAimable
+[CreateAssetMenu(fileName = "Nuevo Ataque a Distancia", menuName = "Habilidades/Ataque a Distancia/Disparo Básico")]
+public class RangedAttackSO : AbilitySO, IAimable
 {
+    [Header("Configuración de Ataque a Distancia")]
     public GameObject projectilePrefab;
-    public float projectileSpeed = 20f;
+    public float projectileSpeed = 25f;
 
-    // 2. Implementa la propiedad que el contrato exige
     public Transform aimSource { get; set; }
 
     public override void Execute(GameObject user)
     {
-        if (projectilePrefab == null)
+        if (projectilePrefab == null) return;
+        
+        // --- LÓGICA DE CRÍTICO ---
+        var effectManager = user.GetComponent<StatusEffectManager>();
+        var criticalBuff = effectManager?.FindEffect(typeof(CriticalBuff));
+        bool isCritical = criticalBuff != null;
+
+        if (isCritical)
         {
-            Debug.LogError("RangedAttackSO: ¡El prefab del proyectil no está asignado!");
-            return;
+            // Consumimos el buff.
+            effectManager.RemoveEffect(criticalBuff);
+        }
+        // -------------------------
+
+        Transform spawnPoint = (aimSource != null) ? aimSource : user.transform;
+        GameObject projGO = Instantiate(projectilePrefab, spawnPoint.position, spawnPoint.rotation);
+
+        // Le decimos al proyectil si es un golpe crítico.
+        if (projGO.TryGetComponent<Projectile>(out Projectile projectile))
+        {
+            projectile.isCritical = isCritical;
         }
 
-        // 3. Usa el aimSource para disparar desde el punto de mira
-        Transform spawnPoint = (aimSource != null) ? aimSource : user.transform;
-
-        GameObject proj = Instantiate(projectilePrefab, spawnPoint.position, spawnPoint.rotation);
-
-        if (proj.TryGetComponent<Rigidbody>(out Rigidbody rb))
+        if (projGO.TryGetComponent<Rigidbody>(out Rigidbody rb))
         {
             rb.linearVelocity = spawnPoint.forward * projectileSpeed;
         }
-
-        Debug.Log($"<color=yellow>{abilityName} ejecutado:</color> Proyectil lanzado desde {spawnPoint.name}");
     }
-} 
+}

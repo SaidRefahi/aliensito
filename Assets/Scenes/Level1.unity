@@ -1022,13 +1022,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19c2f37dacab7174a9fc03151ec5209b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InvisibilityController
-  spriteRenderers: []
-  originalColors: []
-  colliders: []
-  collisionsWereAffected: 0
-  originalLayer: 0
-  invisibilityLayer: 0
-  allChildren: []
 --- !u!1 &737957404
 GameObject:
   m_ObjectHideFlags: 0
@@ -2032,7 +2025,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   moveSpeed: 5
   rotationSpeed: 10
-  meleeAbility: {fileID: 11400000, guid: 7e9ba94876872b849899ab798099a17e, type: 2}
+  meleeAbility: {fileID: 11400000, guid: 117984fd080a9d543b3a0265f262e5f3, type: 2}
   rangedAbility: {fileID: 11400000, guid: c81d7248f3dc74741b577dec1a69e3ea, type: 2}
   invisibilityAbility: {fileID: 11400000, guid: bb8e20d2faad7024195ae21466fd0846, type: 2}
   aimPoint: {fileID: 1509294679}
@@ -2058,12 +2051,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1445049643}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d81aae6884bac4249ab626cf5c2f29e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MeleeAbilityGizmoDrawer
-  abilityToDraw: {fileID: 11400000, guid: 7e9ba94876872b849899ab798099a17e, type: 2}
+  abilityToDraw: {fileID: 11400000, guid: 31db4cd3455c3f647b89e2821d1a19a9, type: 2}
 --- !u!114 &1445049656
 MonoBehaviour:
   m_ObjectHideFlags: 0

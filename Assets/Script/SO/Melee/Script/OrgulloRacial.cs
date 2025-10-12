@@ -1,14 +1,9 @@
 using UnityEngine;
 
-
-[CreateAssetMenu(menuName = "Abilities/Melee/OrgulloRacial")]
-public class MeleeOrgulloRacialSO : MeleeAbilitySO
+[CreateAssetMenu(fileName = "Orgullo Racial", menuName = "Abilities/Melee/Orgullo Racial")]
+public class OrgulloRacialSO : MeleeAbilitySO
 {
-    
-
-    public override void Execute(GameObject user)
-    {
-        Debug.Log($"[Orgullo Racial] Golpe con {damage} de daño y {range} de alcance extra");
-        // lógica de daño + alcance aumentado
-    }
+    // Esta evolución es un buen ejemplo de cómo puedes simplemente usar la clase base
+    // con valores más altos. No necesita código propio, solo ajusta el
+    // 'damage' y 'range' en el Inspector para que sean mayores que el ataque básico.
 }

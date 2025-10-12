@@ -9,14 +9,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8cc634458bda26f4190c6a40cacd52db, type: 3}
-  m_Name: Orgullo Racial
-  m_EditorClassIdentifier: Assembly-CSharp::MeleeOrgulloRacialSO
-  abilityName: Orgullo Racial
+  m_Script: {fileID: 11500000, guid: b7fe2682953782645a4ca53ae36b74e7, type: 3}
+  m_Name: Musculatura Bestial
+  m_EditorClassIdentifier: Assembly-CSharp::MeleeMusculaturaBestialSO
+  abilityName: Musculatura Bestial
   icon: {fileID: 0}
-  damage: 24
-  range: 2.5
+  damage: 15
+  range: 2
   targetLayers:
     serializedVersion: 2
     m_Bits: 128
   criticalDamageMultiplier: 2
+  stunChance: 1
+  stunDuration: 1

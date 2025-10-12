@@ -1,12 +1,8 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Abilities/Melee/Base")]
-public class MeleeBase : MeleeAbilitySO
+[CreateAssetMenu(fileName = "Basic Melee", menuName = "Abilities/Melee/Basic Melee")]
+public class BasicMeleeSO : MeleeAbilitySO
 {
-    // Implementación mínima: usa la lógica provista por MeleeAbilitySO.
-    // No añade comportamiento extra; las variantes específicas pueden sobreescribir Execute.
-    public override void Execute(GameObject user)
-    {
-        base.Execute(user);
-    }
+    // No necesita código extra, hereda todo de la clase base.
+    // Simplemente ajusta el daño y el rango en el Inspector.
 }

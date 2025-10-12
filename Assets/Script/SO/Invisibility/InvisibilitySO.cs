@@ -1,8 +1,9 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System; // Necesario para 'Action'
 
-[CreateAssetMenu(fileName = "New Invisibility Ability", menuName = "Abilities/Invisibility")]
+[CreateAssetMenu(fileName = "Invisibilidad Basica", menuName = "Habilidades/Invisibilidad/Invisibilidad Basica")]
 public class InvisibilitySO : AbilitySO
 {
     [Header("Invisibility Settings")]
@@ -14,7 +15,6 @@ public class InvisibilitySO : AbilitySO
     public Color invisibilityColor = Color.cyan;
 
     [Header("Layer Settings")]
-    [Tooltip("Activa esto si quieres que el jugador cambie a la capa 'Invisibility'")]
     public bool changeLayer = true;
 
     public override void Execute(GameObject user)
@@ -31,18 +31,18 @@ public class InvisibilitySO : AbilitySO
         }
     }
 
-    // --- Clase Ayudante Interna y Optimizada ---
+    // --- Clase Ayudante Interna (Runner) ---
     public class InvisibilityRunner : MonoBehaviour
     {
+        // --- EVENTO AÑADIDO ---
+        // Este evento notificará cuando la invisibilidad termine.
+        public event Action OnInvisibilityEnd;
+
         private InvisibilitySO abilityData;
-        
-        // Listas para guardar los componentes y sus estados originales
         private List<Renderer> renderers = new List<Renderer>();
         private List<Color> originalColors = new List<Color>();
         private int originalLayer;
         private int invisibilityLayer;
-
-        // El Coroutine para el temporizador
         private Coroutine invisibilityCoroutine;
 
         public void StartInvisibility(InvisibilitySO data)
@@ -50,23 +50,18 @@ public class InvisibilitySO : AbilitySO
             this.abilityData = data;
             invisibilityLayer = LayerMask.NameToLayer("Invisibility");
 
-            // --- OPTIMIZACIÓN ---
-            // Guardamos solo los Renderers, que son los que cambian de color.
             GetComponentsInChildren<Renderer>(renderers);
             originalColors.Clear();
             foreach (var r in renderers)
             {
-                // Solo guardamos el color del material principal
                 if(r.material.HasProperty("_Color"))
                 {
                     originalColors.Add(r.material.color);
                 }
             }
 
-            // Aplicamos el efecto visual
             SetVisuals(true);
 
-            // Cambiamos la capa si está activado
             if (abilityData.changeLayer)
             {
                 originalLayer = gameObject.layer;
@@ -78,19 +73,16 @@ public class InvisibilitySO : AbilitySO
 
         public void Stop()
         {
-            if (invisibilityCoroutine != null)
-            {
-                StopCoroutine(invisibilityCoroutine);
-            }
+            if (invisibilityCoroutine != null) StopCoroutine(invisibilityCoroutine);
             
-            // Restauramos todo al estado original
             SetVisuals(false);
-            if (abilityData.changeLayer)
-            {
-                gameObject.layer = originalLayer;
-            }
+            if (abilityData.changeLayer) gameObject.layer = originalLayer;
             
-            Destroy(this); // El ayudante se autodestruye
+            // --- INVOCAMOS EL EVENTO ---
+            // Justo antes de destruir el componente, avisamos que terminó.
+            OnInvisibilityEnd?.Invoke();
+
+            Destroy(this);
         }
 
         private void SetVisuals(bool isInvisible)
