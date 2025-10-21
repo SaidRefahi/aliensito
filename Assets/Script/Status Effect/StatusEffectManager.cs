@@ -1,10 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-
-using UnityEngine;
-using System.Collections.Generic;
-using System.Linq;
 using System; // Necesario para Type
 
 public class StatusEffectManager : MonoBehaviour

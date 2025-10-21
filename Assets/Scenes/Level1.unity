@@ -912,6 +912,7 @@ GameObject:
   - component: {fileID: 638752431}
   - component: {fileID: 638752434}
   - component: {fileID: 638752435}
+  - component: {fileID: 638752437}
   - component: {fileID: 638752436}
   m_Layer: 0
   m_Name: EventSystem
@@ -1019,9 +1020,22 @@ MonoBehaviour:
   m_GameObject: {fileID: 638752429}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 19c2f37dacab7174a9fc03151ec5209b, type: 3}
+  m_Script: {fileID: 11500000, guid: 9da3b4de33504796bc35ac318bae5ab9, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::InvisibilityController
+  m_EditorClassIdentifier: Assembly-CSharp::StatusEffectManager
+--- !u!114 &638752437
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 638752429}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b30e3b1fc0797d49bb9d95b05e285dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ObjectPooler
+  pools: []
 --- !u!1 &737957404
 GameObject:
   m_ObjectHideFlags: 0
@@ -1228,6 +1242,7 @@ GameObject:
   - component: {fileID: 859805015}
   - component: {fileID: 859805014}
   - component: {fileID: 859805013}
+  - component: {fileID: 859805021}
   m_Layer: 7
   m_Name: Humano (1)
   m_TagString: Untagged
@@ -1408,6 +1423,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &859805021
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 859805012}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9da3b4de33504796bc35ac318bae5ab9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StatusEffectManager
 --- !u!1001 &1216077538
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2025,8 +2052,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   moveSpeed: 5
   rotationSpeed: 10
-  meleeAbility: {fileID: 11400000, guid: 117984fd080a9d543b3a0265f262e5f3, type: 2}
-  rangedAbility: {fileID: 11400000, guid: c81d7248f3dc74741b577dec1a69e3ea, type: 2}
+  meleeAbility: {fileID: 11400000, guid: 31db4cd3455c3f647b89e2821d1a19a9, type: 2}
+  rangedAbility: {fileID: 11400000, guid: 6ab75a0751d48034ca2486f6d717365a, type: 2}
   invisibilityAbility: {fileID: 11400000, guid: bb8e20d2faad7024195ae21466fd0846, type: 2}
   aimPoint: {fileID: 1509294679}
 --- !u!114 &1445049653
@@ -2118,6 +2145,7 @@ GameObject:
   - component: {fileID: 1697077531}
   - component: {fileID: 1697077538}
   - component: {fileID: 1697077537}
+  - component: {fileID: 1697077539}
   m_Layer: 7
   m_Name: Humano
   m_TagString: Untagged
@@ -2298,6 +2326,18 @@ NavMeshAgent:
   m_BaseOffset: 0.5
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &1697077539
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1697077530}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9da3b4de33504796bc35ac318bae5ab9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StatusEffectManager
 --- !u!1 &1722405251
 GameObject:
   m_ObjectHideFlags: 0

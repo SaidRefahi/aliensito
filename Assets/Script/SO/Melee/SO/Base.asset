@@ -19,3 +19,12 @@ MonoBehaviour:
   targetLayers:
     serializedVersion: 2
     m_Bits: 128
+  criticalDamageMultiplier: 2
+  attackCooldown: 0.5
+  enableCombos: 0
+  maxComboHits: 3
+  comboResetTime: 1.5
+  comboDamageMultipliers:
+  - 1
+  - 1.05
+  - 1.15

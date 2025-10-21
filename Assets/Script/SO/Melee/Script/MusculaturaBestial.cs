@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Abilities/Melee/MusculaturaBestial")]
+[CreateAssetMenu(fileName = "Musculatura Bestial", menuName = "Habilidades/Melee/Musculatura Bestial")]
 public class MeleeMusculaturaBestialSO : MeleeAbilitySO
 {
     [Header("Musculatura Bestial Settings")]
@@ -11,7 +11,7 @@ public class MeleeMusculaturaBestialSO : MeleeAbilitySO
     [Tooltip("Duración del aturdimiento en segundos.")]
     public float stunDuration = 1.5f;
 
-    public override void PerformMelee(GameObject user)
+    public override void PerformMelee(GameObject user, float finalDamage)
     {
         Transform source = (aimSource != null) ? aimSource : user.transform;
         Collider[] hits = Physics.OverlapSphere(source.position, range, targetLayers);
@@ -20,22 +20,19 @@ public class MeleeMusculaturaBestialSO : MeleeAbilitySO
         {
             if (hit.gameObject == user) continue;
 
-            // Buscamos el gestor de efectos en el objetivo.
-            StatusEffectManager effectManager = hit.GetComponent<StatusEffectManager>();
-            
-            // Aplicamos el daño de impacto siempre.
+            // 1. Aplica el daño final que nos pasa la clase base.
             if (hit.TryGetComponent<Health>(out Health health))
             {
-                health.TakeDamage(damage);
+                health.TakeDamage(finalDamage);
             }
 
-            // Si el enemigo puede ser afectado y tenemos suerte...
-            if (effectManager != null && Random.value <= stunChance)
+            // 2. Comprueba la probabilidad y aplica el aturdimiento.
+            if (Random.value <= stunChance)
             {
-                // Creamos el objeto de efecto de aturdimiento.
-                Stun stunEffect = new Stun(hit.gameObject, stunDuration);
-                // Le pedimos al gestor del enemigo que lo aplique.
-                effectManager.ApplyEffect(stunEffect);
+                if (hit.TryGetComponent<StatusEffectManager>(out var effectManager))
+                {
+                    effectManager.ApplyEffect(new Stun(hit.gameObject, stunDuration));
+                }
             }
         }
     }

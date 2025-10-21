@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Abilities/Melee/SedDeSangre")]
+[CreateAssetMenu(fileName = "Sed de Sangre", menuName = "Habilidades/Melee/Sed de Sangre")]
 public class MeleeSedDeSangreSO : MeleeAbilitySO
 {
     [Header("Sed de Sangre Settings")]
@@ -8,13 +8,12 @@ public class MeleeSedDeSangreSO : MeleeAbilitySO
     [Range(0, 1)]
     public float healPercent = 0.1f;
 
-    // Sobrescribimos el método PerformMelee para añadir la lógica de curación.
-    public override void PerformMelee(GameObject user)
+    // Sobrescribimos el método que recibe el daño final de la clase base.
+    public override void PerformMelee(GameObject user, float finalDamage)
     {
         Transform source = (aimSource != null) ? aimSource : user.transform;
         Collider[] hits = Physics.OverlapSphere(source.position, range, targetLayers);
         
-        // Obtenemos la vida del jugador una sola vez para eficiencia.
         Health userHealth = user.GetComponent<Health>();
         if (userHealth == null) return;
 
@@ -24,11 +23,11 @@ public class MeleeSedDeSangreSO : MeleeAbilitySO
 
             if (hit.TryGetComponent<Health>(out Health targetHealth))
             {
-                // 1. Inflige daño al enemigo.
-                targetHealth.TakeDamage(damage);
+                // 1. Inflige el daño final (ya calculado con combos/críticos).
+                targetHealth.TakeDamage(finalDamage);
 
-                // 2. Calcula la curación basada en el daño.
-                float healAmount = damage * healPercent;
+                // 2. Calcula la curación basada en ese daño final.
+                float healAmount = finalDamage * healPercent;
                 
                 // 3. Cúrate a ti mismo.
                 userHealth.Heal(healAmount);

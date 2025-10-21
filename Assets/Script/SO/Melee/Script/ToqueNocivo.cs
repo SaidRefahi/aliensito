@@ -1,13 +1,16 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Abilities/Melee/ToqueNocivo")]
+using UnityEngine;
+
+[CreateAssetMenu(fileName = "Toque Nocivo", menuName = "Habilidades/Melee/Toque Nocivo")]
 public class MeleeToqueNocivoSO : MeleeAbilitySO
 {
     [Header("Toque Nocivo Settings")]
     public float poisonDamagePerSecond = 2f;
     public float poisonDuration = 5f;
 
-    public override void PerformMelee(GameObject user)
+    // Sobrescribimos el método que recibe el daño ya calculado por la clase base.
+    public override void PerformMelee(GameObject user, float finalDamage)
     {
         Transform source = (aimSource != null) ? aimSource : user.transform;
         Collider[] hits = Physics.OverlapSphere(source.position, range, targetLayers);
@@ -16,20 +19,16 @@ public class MeleeToqueNocivoSO : MeleeAbilitySO
         {
             if (hit.gameObject == user) continue;
 
-            // Buscamos el StatusEffectManager en el enemigo
-            StatusEffectManager effectManager = hit.GetComponent<StatusEffectManager>();
-            if (effectManager == null) continue; // Si no puede ser afectado, lo ignoramos
-
             if (hit.TryGetComponent<Health>(out Health health))
             {
-                // 1. Daño de impacto
-                health.TakeDamage(damage);
-
-                // 2. Creamos el objeto del efecto de veneno
-                Poison poisonEffect = new Poison(hit.gameObject, poisonDuration, poisonDamagePerSecond);
+                // 1. Aplica el daño de impacto final (calculado en la clase base).
+                health.TakeDamage(finalDamage);
                 
-                // 3. Le pedimos al gestor del enemigo que lo aplique
-                effectManager.ApplyEffect(poisonEffect);
+                // 2. Aplica el efecto de veneno.
+                if (hit.TryGetComponent<StatusEffectManager>(out var effectManager))
+                {
+                    effectManager.ApplyEffect(new Poison(hit.gameObject, poisonDuration, poisonDamagePerSecond));
+                }
             }
         }
     }
