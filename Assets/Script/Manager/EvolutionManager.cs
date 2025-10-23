@@ -8,7 +8,7 @@ public class EvolutionManager : MonoBehaviour
     [Header("Configuración de Evolución")]
     [SerializeField] private int materialNeeded = 100;
     private int currentMaterial = 0;
-    private bool isEvolving = false; // Bandera para evitar abrir el menú múltiples veces
+    private bool isEvolving = false;
 
     [Header("Pool de Evoluciones")]
     [SerializeField] private List<AbilitySO> evolutionPool;
@@ -23,16 +23,12 @@ public class EvolutionManager : MonoBehaviour
 
     public void AddGeneticMaterial(int amount)
     {
-        if (isEvolving) return; // Si ya estamos en el proceso de evolucionar, no hacemos nada
-
+        if (isEvolving) return;
         currentMaterial += amount;
-        Debug.Log($"Material genético: {currentMaterial}/{materialNeeded}");
-
         if (currentMaterial >= materialNeeded)
         {
-            isEvolving = true; // Bloqueamos la posibilidad de volver a entrar
+            isEvolving = true;
             PresentEvolutionOptions();
-            // --- YA NO RESTAMOS EL MATERIAL AQUÍ ---
         }
     }
 
@@ -42,29 +38,18 @@ public class EvolutionManager : MonoBehaviour
         OnEvolutionOptionsReady?.Invoke(offeredEvolutions);
     }
 
+    // --- MÉTODO SELECTEVOLUTION CORREGIDO Y SIMPLIFICADO ---
     public void SelectEvolution(AbilitySO chosenAbility)
     {
-        // --- RESTAMOS EL MATERIAL AQUÍ, DESPUÉS DE LA SELECCIÓN ---
         currentMaterial -= materialNeeded;
 
-        if (chosenAbility == null || playerController == null)
+        if (chosenAbility != null && playerController != null)
         {
-            isEvolving = false; // Desbloqueamos
-            return;
+            // Ya no hay 'if' ni 'is'. Simplemente leemos el slot de la propia habilidad.
+            // Esto funcionará para 'Egocentrismo' y cualquier otra habilidad futura.
+            playerController.EvolveAbility(chosenAbility.slot, chosenAbility);
         }
-
-        string slot;
-        if (chosenAbility is MeleeAbilitySO) slot = "Melee";
-        else if (chosenAbility is RangedAttackSO) slot = "Ranged";
-        else if (chosenAbility is InvisibilitySO) slot = "Invisibility";
-        else 
-        {
-            Debug.LogWarning($"Tipo de habilidad '{chosenAbility.GetType()}' no reconocido.");
-            isEvolving = false; // Desbloqueamos
-            return;
-        }
-
-        playerController.EvolveAbility(slot, chosenAbility);
-        isEvolving = false; // Desbloqueamos para la siguiente evolución
+        
+        isEvolving = false;
     }
 }

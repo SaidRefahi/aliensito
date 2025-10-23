@@ -12,7 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d95a16da8c3cf0468272845cafc875b, type: 3}
   m_Name: RangedPosion
   m_EditorClassIdentifier: Assembly-CSharp::RangedAttackSO
-  abilityName: RangedPoison
+  abilityName: Veneno
   icon: {fileID: 0}
+  description: 
+  slot: 1
   projectilePrefab: {fileID: 3318043773415785723, guid: 1c700a5c1754134448842d3e287389f8, type: 3}
   projectileSpeed: 25
+  projectilePoolTag: Projectile_Basic

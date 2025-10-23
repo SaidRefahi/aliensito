@@ -23,15 +23,6 @@ public abstract class MeleeAbilitySO : AbilitySO, IAimable
     private readonly Dictionary<GameObject, int> comboIndexByUser = new Dictionary<GameObject, int>();
     private readonly Dictionary<GameObject, float> lastComboTime = new Dictionary<GameObject, float>();
 
-    private void OnEnable()
-    {
-        if (maxComboHits <= 0) maxComboHits = 1;
-        if (comboDamageMultipliers == null || comboDamageMultipliers.Length == 0)
-        {
-            comboDamageMultipliers = new float[] { 1f };
-        }
-    }
-
     public override void Execute(GameObject user)
     {
         if (!CanAttack(user)) return;
@@ -58,7 +49,6 @@ public abstract class MeleeAbilitySO : AbilitySO, IAimable
         if (isCritical)
         {
             finalDamage *= criticalDamageMultiplier;
-            Debug.Log("<color=orange>CRITICAL HIT!</color>");
             effectManager.RemoveEffect(criticalBuff);
         }
         
@@ -80,6 +70,7 @@ public abstract class MeleeAbilitySO : AbilitySO, IAimable
         return Time.time >= last + attackCooldown;
     }
 
+    // --- EL MÉTODO DrawGizmos DEBE ESTAR AQUÍ DENTRO ---
     #if UNITY_EDITOR
     public void DrawGizmos(Transform userTransform)
     {

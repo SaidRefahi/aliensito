@@ -1,10 +1,10 @@
+// Ruta: Assets/Script/Manager/PoolManager.cs
+// ACCIÓN: Crea este nuevo script y añádelo a un objeto vacío en tu escena principal.
 using UnityEngine;
 using System.Collections.Generic;
 
-// El nombre de la clase ahora es PoolManager
 public class PoolManager : MonoBehaviour
 {
-    // La instancia ahora es de tipo PoolManager
     public static PoolManager Instance;
 
     [System.Serializable]

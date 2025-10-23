@@ -1,3 +1,5 @@
+// Ruta: Assets/Script/SO/Ranged/RangedAttackSO.cs
+// ACCIÓN: Reemplaza tu script existente con esta versión.
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Disparo Básico", menuName = "Habilidades/Ataque a Distancia/Disparo Básico")]
@@ -7,7 +9,7 @@ public class RangedAttackSO : AbilitySO, IAimable
     public GameObject projectilePrefab;
     public float projectileSpeed = 25f;
     [Tooltip("Debe coincidir con el tag en el PoolManager")]
-    public string projectilePoolTag = "Projectile_Basic";
+    public string projectilePoolTag; // Asegúrate de rellenar esto en el Inspector
 
     public Transform aimSource { get; set; }
 
@@ -18,7 +20,6 @@ public class RangedAttackSO : AbilitySO, IAimable
         var effectManager = user.GetComponent<StatusEffectManager>();
         var criticalBuff = effectManager?.FindEffect(typeof(CriticalBuff));
         bool isCritical = criticalBuff != null;
-
         if (isCritical)
         {
             effectManager.RemoveEffect(criticalBuff);
@@ -26,8 +27,7 @@ public class RangedAttackSO : AbilitySO, IAimable
 
         Transform spawnPoint = (aimSource != null) ? aimSource : user.transform;
         
-        // --- LÍNEA CORREGIDA ---
-        // Ahora llama al PoolManager
+        // Pide un proyectil al PoolManager.
         GameObject projGO = PoolManager.Instance.SpawnFromPool(projectilePoolTag, spawnPoint.position, spawnPoint.rotation);
         if(projGO == null) return;
         

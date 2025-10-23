@@ -4,9 +4,7 @@ using UnityEngine;
 public class SedDeSangre : MeleeAbilitySO
 {
     [Header("Sed de Sangre Settings")]
-    [Tooltip("Porcentaje del daño infligido que te curas (0.1 = 10%)")]
-    [Range(0, 1)]
-    public float healPercent = 0.1f;
+    [Range(0, 1)] public float healPercent = 0.1f;
 
     public override void PerformMelee(GameObject user, float finalDamage)
     {
@@ -18,7 +16,6 @@ public class SedDeSangre : MeleeAbilitySO
         foreach (var hit in hits)
         {
             if (hit.gameObject == user) continue;
-
             if (hit.TryGetComponent<Health>(out Health targetHealth))
             {
                 targetHealth.TakeDamage(finalDamage);

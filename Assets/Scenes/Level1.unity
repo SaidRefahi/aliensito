@@ -1190,7 +1190,6 @@ GameObject:
   - component: {fileID: 638752435}
   - component: {fileID: 638752437}
   - component: {fileID: 638752436}
-  - component: {fileID: 638752438}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -1312,24 +1311,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b30e3b1fc0797d49bb9d95b05e285dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ObjectPooler
-  pools: []
---- !u!114 &638752438
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 638752429}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d69a8cfda0996f64490c8afa6fbe9ed0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::EvolutionUI
-  evolutionPanel: {fileID: 881937780}
-  optionCards:
-  - {fileID: 1052330387}
-  - {fileID: 589602932}
-  - {fileID: 1337178789}
+  pools:
+  - tag: Projectile
+    prefab: {fileID: 3318043773415785723, guid: 7b6cc435699a0a949a5aeec089532b58, type: 3}
+    size: 10
+  - tag: ProjectileAcido
+    prefab: {fileID: 3318043773415785723, guid: 09057b69cd02c12479f9fe7e23fff3c0, type: 3}
+    size: 10
+  - tag: ProjectilePoison
+    prefab: {fileID: 3318043773415785723, guid: 1c700a5c1754134448842d3e287389f8, type: 3}
+    size: 10
 --- !u!1 &737957404
 GameObject:
   m_ObjectHideFlags: 0
@@ -2919,6 +2910,7 @@ GameObject:
   - component: {fileID: 1445049653}
   - component: {fileID: 1445049654}
   - component: {fileID: 1445049656}
+  - component: {fileID: 1445049657}
   m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
@@ -3237,14 +3229,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EvolutionManager
   materialNeeded: 100
   evolutionPool:
-  - {fileID: 11400000, guid: 03db161918af4894dad5df38b383bed7, type: 2}
-  - {fileID: 11400000, guid: c50b46f68fb11db48811af8045a591a7, type: 2}
   - {fileID: 11400000, guid: 31db4cd3455c3f647b89e2821d1a19a9, type: 2}
-  - {fileID: 11400000, guid: 386e81896203da348b28fb683bc75c6e, type: 2}
-  - {fileID: 11400000, guid: df0f00fe2171c96469810d1d8594cf8c, type: 2}
-  - {fileID: 11400000, guid: 117984fd080a9d543b3a0265f262e5f3, type: 2}
+  - {fileID: 11400000, guid: c50b46f68fb11db48811af8045a591a7, type: 2}
   - {fileID: 11400000, guid: 6ab75a0751d48034ca2486f6d717365a, type: 2}
-  - {fileID: 11400000, guid: ecd6557fbc457eb4da0d64800229f74f, type: 2}
+--- !u!114 &1445049657
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1445049643}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9da3b4de33504796bc35ac318bae5ab9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StatusEffectManager
 --- !u!1 &1509294678
 GameObject:
   m_ObjectHideFlags: 0
@@ -3572,6 +3571,7 @@ GameObject:
   - component: {fileID: 1722405255}
   - component: {fileID: 1722405254}
   - component: {fileID: 1722405253}
+  - component: {fileID: 1722405256}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -3663,6 +3663,23 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!114 &1722405256
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1722405251}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d69a8cfda0996f64490c8afa6fbe9ed0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EvolutionUI
+  evolutionPanel: {fileID: 881937780}
+  optionCards:
+  - {fileID: 1052330387}
+  - {fileID: 589602932}
+  - {fileID: 1337178789}
 --- !u!1 &1873887281
 GameObject:
   m_ObjectHideFlags: 0

@@ -12,8 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 393164b4f656dc64a927be621e7c985e, type: 3}
   m_Name: Egocentrismo
   m_EditorClassIdentifier: Assembly-CSharp::EgocentrismoSO
-  abilityName: 
+  abilityName: Egocentrismo
   icon: {fileID: 0}
+  description: 
+  slot: 2
   radius: 8
   stunDuration: 2.5
   enemyLayers:

@@ -12,8 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 666a6b702c5ac4f499471f689ab5ff37, type: 3}
   m_Name: Toque Nocivo
   m_EditorClassIdentifier: Assembly-CSharp::MeleeToqueNocivoSO
-  abilityName: 
+  abilityName: Toque Nocivo
   icon: {fileID: 0}
+  description: 
+  slot: 0
   damage: 15
   range: 2
   targetLayers:

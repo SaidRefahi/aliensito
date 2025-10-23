@@ -15,11 +15,9 @@ public class ToqueNocivo : MeleeAbilitySO
         foreach (var hit in hits)
         {
             if (hit.gameObject == user) continue;
-
             if (hit.TryGetComponent<Health>(out Health health))
             {
                 health.TakeDamage(finalDamage);
-                
                 if (hit.TryGetComponent<StatusEffectManager>(out var effectManager))
                 {
                     effectManager.ApplyEffect(new Poison(hit.gameObject, poisonDuration, poisonDamagePerSecond));

@@ -1,3 +1,5 @@
+// Ruta: Assets/Script/SO/Ranged/ControlDePlagasSO.cs
+// ACCIÓN: Reemplaza tu script existente con esta versión.
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Control de Plagas", menuName = "Habilidades/Ataque a Distancia/Control de plagas")]
@@ -15,7 +17,6 @@ public class ControlDePlagasSO : RangedAttackSO
         var effectManager = user.GetComponent<StatusEffectManager>();
         var criticalBuff = effectManager?.FindEffect(typeof(CriticalBuff));
         bool isCritical = criticalBuff != null;
-        
         if (isCritical)
         {
             effectManager.RemoveEffect(criticalBuff);
@@ -30,8 +31,7 @@ public class ControlDePlagasSO : RangedAttackSO
         {
             Quaternion rotation = spawnPoint.rotation * Quaternion.Euler(0, startingAngle + i * angleStep, 0);
             
-            // --- LÍNEA CORREGIDA ---
-            // Ahora llama al PoolManager
+            // Llama al PoolManager en el bucle.
             GameObject projGO = PoolManager.Instance.SpawnFromPool(projectilePoolTag, spawnPoint.position, rotation);
             if(projGO == null) continue;
             

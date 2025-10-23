@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(StatusEffectManager))]
 public class PlayerController : MonoBehaviour
 {
     [Header("Movement")]
@@ -17,7 +18,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private AbilitySO invisibilityAbility;
 
     [Header("Aim")]
-    [SerializeField] private Transform aimPoint;
+    [SerializeField] public Transform aimPoint;
 
     private void Awake()
     {
@@ -38,53 +39,36 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    // --- MÉTODOS DE INPUT LLAMADOS POR "SEND MESSAGES" ---
-
-    public void OnMove(InputValue value)
-    {
-        moveInput = value.Get<Vector2>();
-    }
-
-    public void OnMeleeAttack(InputValue value)
-    {
-        if (value.isPressed)
-        {
-            UseAbility(meleeAbility);
-        }
-    }
-
-    // Dejamos este por si quieres volver a usarlo en el futuro
-    public void OnRangedAttack(InputValue value)
-    {
-        if (value.isPressed)
-        {
-            UseAbility(rangedAbility);
-        }
-    }
-
-    public void OnInvisibility(InputValue value)
-    {
-        if (value.isPressed)
-        {
-            UseAbility(invisibilityAbility);
-        }
-    }
-
-    // --- LÓGICA CENTRAL DE HABILIDADES ---
+    public void OnMove(InputValue value) { moveInput = value.Get<Vector2>(); }
+    public void OnMeleeAttack(InputValue value) { if (value.isPressed) UseAbility(meleeAbility); }
+    public void OnRangedAttack(InputValue value) { if (value.isPressed) UseAbility(rangedAbility); }
+    public void OnInvisibility(InputValue value) { if (value.isPressed) UseAbility(invisibilityAbility); }
+    
     private void UseAbility(AbilitySO ability)
     {
         if (ability == null) return;
-
-        Debug.Log($"<color=lime>PlayerController: Activando habilidad '{ability.abilityName}'.</color>");
-
         if (ability is IAimable aimableAbility)
         {
             aimableAbility.aimSource = aimPoint;
         }
-
         ability.Execute(gameObject);
     }
 
-    // El método EvolveAbility no necesita cambios
-    public void EvolveAbility(string abilityName, AbilitySO newAbility) { /* ... */ }
+    // --- MÉTODO EVOLVEABILITY CORREGIDO ---
+    public void EvolveAbility(AbilitySlot slot, AbilitySO newAbility)
+    {
+        switch (slot)
+        {
+            case AbilitySlot.Melee:
+                meleeAbility = newAbility;
+                break;
+            case AbilitySlot.Ranged:
+                rangedAbility = newAbility;
+                break;
+            case AbilitySlot.Invisibility:
+                invisibilityAbility = newAbility;
+                break;
+        }
+        Debug.Log($"<color=cyan>Habilidad del slot {slot} evolucionada a: {newAbility?.abilityName ?? "ninguna"}</color>");
+    }
 }

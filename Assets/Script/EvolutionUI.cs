@@ -28,7 +28,9 @@ public class EvolutionUI : MonoBehaviour
 
     private void ShowOptions(List<AbilitySO> options)
     {
+        // La UI ahora es responsable de pausar el juego al mostrarse.
         Time.timeScale = 0f;
+        
         evolutionPanel.SetActive(true);
         for (int i = 0; i < optionCards.Length; i++)
         {
