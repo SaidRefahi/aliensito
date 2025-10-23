@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Musculatura Bestial", menuName = "Habilidades/Melee/Musculatura Bestial")]
-public class MeleeMusculaturaBestialSO : MeleeAbilitySO
+public class MusculaturaBestial : MeleeAbilitySO
 {
     [Header("Musculatura Bestial Settings")]
     [Tooltip("Probabilidad de aturdir con cada golpe (0.25 = 25%)")]
@@ -20,13 +20,11 @@ public class MeleeMusculaturaBestialSO : MeleeAbilitySO
         {
             if (hit.gameObject == user) continue;
 
-            // 1. Aplica el daño final que nos pasa la clase base.
             if (hit.TryGetComponent<Health>(out Health health))
             {
                 health.TakeDamage(finalDamage);
             }
 
-            // 2. Comprueba la probabilidad y aplica el aturdimiento.
             if (Random.value <= stunChance)
             {
                 if (hit.TryGetComponent<StatusEffectManager>(out var effectManager))

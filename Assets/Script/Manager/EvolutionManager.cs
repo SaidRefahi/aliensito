@@ -1,55 +1,59 @@
 using UnityEngine;
+using System.Collections.Generic;
+using System.Linq;
 using System;
 
 public class EvolutionManager : MonoBehaviour
 {
-    [Header("Genetic Material")]
-    [SerializeField] private int currentGeneticMaterial = 0;
-    [SerializeField] private int materialNeededForEvolution = 100;
+    [Header("Configuración de Evolución")]
+    [SerializeField] private int materialNeeded = 100;
+    private int currentMaterial = 0;
 
-    public static event Action<int> OnGeneticMaterialChanged;
-    public static event Action OnEvolutionReady;
-
+    [Header("Pool de Evoluciones")]
+    [Tooltip("Arrastra aquí todos los ScriptableObjects de las posibles evoluciones.")]
+    [SerializeField] private List<AbilitySO> evolutionPool;
+    
     private PlayerController playerController;
+
+    public static event Action<List<AbilitySO>> OnEvolutionOptionsReady;
 
     private void Awake()
     {
         playerController = GetComponent<PlayerController>();
     }
 
-    private void Start()
-    {
-        OnGeneticMaterialChanged?.Invoke(currentGeneticMaterial);
-    }
-
     public void AddGeneticMaterial(int amount)
     {
-        currentGeneticMaterial += amount;
-        Debug.Log($"Material genético recolectado: {amount}. Total: {currentGeneticMaterial}");
-
-        OnGeneticMaterialChanged?.Invoke(currentGeneticMaterial);
-
-        if (currentGeneticMaterial >= materialNeededForEvolution)
+        currentMaterial += amount;
+        Debug.Log($"Material genético: {currentMaterial}/{materialNeeded}");
+        if (currentMaterial >= materialNeeded)
         {
-            OnEvolutionReady?.Invoke();
-            Debug.Log("¡Evolución disponible!");
+            currentMaterial -= materialNeeded;
+            PresentEvolutionOptions();
         }
     }
 
-    public void Evolve(string abilityName, AbilitySO newAbility)
+    private void PresentEvolutionOptions()
     {
-        if (currentGeneticMaterial < materialNeededForEvolution)
+        // El manager ya no pausa el juego. Solo prepara y envía las opciones.
+        List<AbilitySO> offeredEvolutions = evolutionPool.OrderBy(x => Guid.NewGuid()).Take(3).ToList();
+        OnEvolutionOptionsReady?.Invoke(offeredEvolutions);
+    }
+
+    public void SelectEvolution(AbilitySO chosenAbility)
+    {
+        if (chosenAbility == null || playerController == null) return;
+
+        string slot;
+        if (chosenAbility is MeleeAbilitySO) slot = "Melee";
+        else if (chosenAbility is RangedAttackSO) slot = "Ranged";
+        else if (chosenAbility is InvisibilitySO) slot = "Invisibility";
+        else 
         {
-            Debug.LogWarning("No hay suficiente material genético para evolucionar.");
+            Debug.LogWarning($"Tipo de habilidad '{chosenAbility.GetType()}' no reconocido para asignar a un slot.");
             return;
         }
 
-        if (playerController != null)
-        {
-            currentGeneticMaterial -= materialNeededForEvolution;
-            OnGeneticMaterialChanged?.Invoke(currentGeneticMaterial);
-
-            playerController.EvolveAbility(abilityName, newAbility);
-        }
+        playerController.EvolveAbility(slot, chosenAbility);
     }
 }

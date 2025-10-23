@@ -62,7 +62,6 @@ public abstract class MeleeAbilitySO : AbilitySO, IAimable
             effectManager.RemoveEffect(criticalBuff);
         }
         
-        // Llama a la lógica de la evolución, pasándole el daño final calculado.
         PerformMelee(user, finalDamage);
         
         lastAttackTime[user] = Time.time;
@@ -73,7 +72,6 @@ public abstract class MeleeAbilitySO : AbilitySO, IAimable
         }
     }
 
-    // Las evoluciones DEBEN sobrescribir este método.
     public abstract void PerformMelee(GameObject user, float finalDamage);
 
     private bool CanAttack(GameObject user)
@@ -81,7 +79,8 @@ public abstract class MeleeAbilitySO : AbilitySO, IAimable
         if (!lastAttackTime.TryGetValue(user, out float last)) return true;
         return Time.time >= last + attackCooldown;
     }
-#if UNITY_EDITOR
+
+    #if UNITY_EDITOR
     public void DrawGizmos(Transform userTransform)
     {
         if (userTransform == null) return;
@@ -93,5 +92,5 @@ public abstract class MeleeAbilitySO : AbilitySO, IAimable
         UnityEditor.Handles.color = Color.red;
         UnityEditor.Handles.DrawWireArc(source.position, Vector3.up, source.forward, 360, range);
     }
-#endif
+    #endif
 }

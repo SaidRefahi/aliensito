@@ -1,9 +1,11 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public class ObjectPooler : MonoBehaviour
+// El nombre de la clase ahora es PoolManager
+public class PoolManager : MonoBehaviour
 {
-    public static ObjectPooler Instance;
+    // La instancia ahora es de tipo PoolManager
+    public static PoolManager Instance;
 
     [System.Serializable]
     public class Pool
@@ -31,6 +33,7 @@ public class ObjectPooler : MonoBehaviour
             for (int i = 0; i < pool.size; i++)
             {
                 GameObject obj = Instantiate(pool.prefab);
+                obj.transform.SetParent(this.transform);
                 obj.SetActive(false);
                 objectPool.Enqueue(obj);
             }
@@ -42,16 +45,17 @@ public class ObjectPooler : MonoBehaviour
     {
         if (!poolDictionary.ContainsKey(tag))
         {
-            Debug.LogWarning("Pool with tag " + tag + " doesn't exist.");
+            Debug.LogWarning("El Pool con el tag '" + tag + "' no existe.");
             return null;
         }
 
         GameObject objectToSpawn = poolDictionary[tag].Dequeue();
+        
         objectToSpawn.SetActive(true);
         objectToSpawn.transform.position = position;
         objectToSpawn.transform.rotation = rotation;
-        
-        poolDictionary[tag].Enqueue(objectToSpawn); // Re-enqueue for reuse
+
+        poolDictionary[tag].Enqueue(objectToSpawn);
 
         return objectToSpawn;
     }
