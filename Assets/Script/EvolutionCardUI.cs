@@ -28,13 +28,11 @@ public class EvolutionCardUI : MonoBehaviour
 
     private void OnCardSelected()
     {
-        // 1. Llama al manager para que aplique la lógica de la evolución.
         if (evolutionManager != null)
         {
             evolutionManager.SelectEvolution(currentAbility);
         }
         
-        // 2. La carta SIEMPRE reanuda el juego y oculta el panel.
         Time.timeScale = 1f;
         GetComponentInParent<EvolutionUI>().evolutionPanel.SetActive(false);
     }
