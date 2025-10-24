@@ -1,5 +1,3 @@
-// Ruta: Assets/Script/Manager/PoolManager.cs
-// ACCIÓN: Crea este nuevo script y añádelo a un objeto vacío en tu escena principal.
 using UnityEngine;
 using System.Collections.Generic;
 

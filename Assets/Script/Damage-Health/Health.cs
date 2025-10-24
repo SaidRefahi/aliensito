@@ -10,7 +10,7 @@ public class Health : MonoBehaviour
 
     private float currentHealth;
     private bool hasDied = false;
-    private float damageMultiplier = 1f; // Para el efecto de vulnerabilidad
+    private float damageMultiplier = 1f; 
 
     public event Action<float, float> OnHealthChanged;
     public event Action OnDeath;

@@ -9,7 +9,7 @@ public class EvolutionUI : MonoBehaviour
 
     private void Start()
     {
-        evolutionManager = FindObjectOfType<EvolutionManager>();
+        evolutionManager = FindFirstObjectByType<EvolutionManager>();
         if (evolutionManager == null)
         {
             Debug.LogError("No se encontró un EvolutionManager en la escena.");
