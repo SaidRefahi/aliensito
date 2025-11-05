@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 
+[RequireComponent(typeof(StatusEffectManager))] // Requerimos el manager
 public class Health : MonoBehaviour
 {
     [SerializeField] private float maxHealth = 100f;
@@ -10,7 +11,8 @@ public class Health : MonoBehaviour
 
     private float currentHealth;
     private bool hasDied = false;
-    private float damageMultiplier = 1f; 
+    private float damageMultiplier = 1f;
+    private HitFeedback hitFeedback; 
 
     public event Action<float, float> OnHealthChanged;
     public event Action OnDeath;
@@ -18,30 +20,54 @@ public class Health : MonoBehaviour
     private void Awake()
     {
         currentHealth = maxHealth;
+        // --- NUEVA LÍNEA ---
+        // Obtenemos el componente al despertar
+        hitFeedback = GetComponent<HitFeedback>();
+    }
+
+    private void Start()
+    {
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
     public void TakeDamage(float baseDamage)
     {
         if (hasDied) return;
+
         float finalDamage = baseDamage * damageMultiplier;
         currentHealth = Mathf.Clamp(currentHealth - finalDamage, 0f, maxHealth);
-        Debug.Log($"<color=red>{gameObject.name} took {finalDamage} damage.</color> Health: {currentHealth}");
+        
+        if(finalDamage > 0)
+            Debug.Log($"<color=red>{gameObject.name} took {finalDamage} damage.</color> Health: {currentHealth}/{maxHealth}");
+
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
-        if (currentHealth <= 0f) Die();
+        
+        // --- LÍNEA CLAVE AÑADIDA ---
+        // Si el efecto existe, lo reproducimos.
+        if (hitFeedback != null)
+        {
+            hitFeedback.PlayEffect();
+        }
+        // ---------------------------
+
+        if (currentHealth <= 0f)
+        {
+            Die();
+        }
     }
 
     public void SetDamageMultiplier(float multiplier)
     {
-        this.damageMultiplier = multiplier;
+        this.damageMultiplier = Mathf.Max(0, multiplier);
     }
-    
-    // El resto de tus métodos (Heal, Die, Getters...)
+
     public void Heal(float amount)
     {
-        if (hasDied) return;
+        if (hasDied || amount <= 0) return;
         currentHealth = Mathf.Clamp(currentHealth + amount, 0f, maxHealth);
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
+
     private void Die()
     {
         if(hasDied) return;
@@ -50,6 +76,7 @@ public class Health : MonoBehaviour
         if (geneticMaterialPrefab != null) Instantiate(geneticMaterialPrefab, transform.position, Quaternion.identity);
         if (destroyOnDeath) Destroy(gameObject);
     }
+
     public float GetCurrentHealth() => currentHealth;
     public float GetMaxHealth() => maxHealth;
     public bool IsDead() => hasDied;

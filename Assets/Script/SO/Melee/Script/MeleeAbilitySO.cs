@@ -7,7 +7,7 @@ public abstract class MeleeAbilitySO : AbilitySO, IAimable
     [Header("Configuración Melee")]
     public float damage = 15f;
     public float range = 2f;
-    public LayerMask targetLayers;
+    // public LayerMask targetLayers; // <-- ¡¡BORRADO!! ¡¡CÓDIGO SUCIO FUERA!!
     public float criticalDamageMultiplier = 2f;
 
     [Header("Configuración de Cooldown y Combo")]
@@ -23,9 +23,18 @@ public abstract class MeleeAbilitySO : AbilitySO, IAimable
     private readonly Dictionary<GameObject, int> comboIndexByUser = new Dictionary<GameObject, int>();
     private readonly Dictionary<GameObject, float> lastComboTime = new Dictionary<GameObject, float>();
 
-    public override void Execute(GameObject user)
+    public override bool Execute(GameObject user)
     {
-        if (!CanAttack(user)) return;
+        if (!CanAttack(user)) return false; 
+
+        // --- ¡LÓGICA NUEVA! ---
+        TargetingProfile targeting = user.GetComponent<TargetingProfile>();
+        if (targeting == null)
+        {
+            Debug.LogError($"¡El atacante {user.name} no tiene un componente TargetingProfile!");
+            return false;
+        }
+        // --- FIN LÓGICA NUEVA ---
 
         int comboIndex = 0;
         if (enableCombos)
@@ -52,7 +61,9 @@ public abstract class MeleeAbilitySO : AbilitySO, IAimable
             effectManager.RemoveEffect(criticalBuff);
         }
         
-        PerformMelee(user, finalDamage);
+        // --- ¡LÍNEA MODIFICADA! ---
+        // Le pasamos el LayerMask del atacante
+        PerformMelee(user, finalDamage, targeting.DamageableLayers); 
         
         lastAttackTime[user] = Time.time;
         if (enableCombos)
@@ -60,9 +71,12 @@ public abstract class MeleeAbilitySO : AbilitySO, IAimable
             lastComboTime[user] = Time.time;
             comboIndexByUser[user] = (comboIndex + 1) % maxComboHits;
         }
+        return true;
     }
 
-    public abstract void PerformMelee(GameObject user, float finalDamage);
+    // --- ¡FIRMA MODIFICADA! ---
+    // Ahora esta acción abstracta ACEPTA las layers
+    public abstract void PerformMelee(GameObject user, float finalDamage, LayerMask damageLayers);
 
     private bool CanAttack(GameObject user)
     {
@@ -70,8 +84,8 @@ public abstract class MeleeAbilitySO : AbilitySO, IAimable
         return Time.time >= last + attackCooldown;
     }
 
-    // --- EL MÉTODO DrawGizmos DEBE ESTAR AQUÍ DENTRO ---
     #if UNITY_EDITOR
+    // (Tu código de Gizmos se mantiene igual)
     public void DrawGizmos(Transform userTransform)
     {
         if (userTransform == null) return;

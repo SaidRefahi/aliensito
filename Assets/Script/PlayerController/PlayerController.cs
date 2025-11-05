@@ -1,74 +1,57 @@
+// Ruta: Assets/Scripts/PlayerController/PlayerController.cs
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(Rigidbody))]
-[RequireComponent(typeof(StatusEffectManager))]
+// Este script ahora requiere los componentes que va a controlar
+[RequireComponent(typeof(PlayerMovement))]
+[RequireComponent(typeof(PlayerAbilityHandler))]
+[RequireComponent(typeof(StatusEffectManager))] // Lo mantenemos aquí
 public class PlayerController : MonoBehaviour
 {
-    [Header("Movement")]
-    [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float rotationSpeed = 10f;
+    // Referencias a los componentes que controlará
+    private PlayerMovement playerMovement;
+    private PlayerAbilityHandler playerAbilityHandler;
 
-    private Rigidbody rb;
-    private Vector2 moveInput;
-
-    [Header("Abilities")]
-    [SerializeField] private AbilitySO meleeAbility;
-    [SerializeField] private AbilitySO rangedAbility;
-    [SerializeField] private AbilitySO invisibilityAbility;
-
-    [Header("Aim")]
-    [SerializeField] public Transform aimPoint;
+    // El PlayerInput (componente) llamará a estos métodos.
+    // Ya no necesitamos guardar el Animator ni las habilidades aquí.
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody>();
-        rb.freezeRotation = true;
+        // Obtenemos las referencias a nuestros "trabajadores"
+        playerMovement = GetComponent<PlayerMovement>();
+        playerAbilityHandler = GetComponent<PlayerAbilityHandler>();
     }
 
-    private void FixedUpdate() => HandleMovement();
+    // --- MÉTODOS DE INPUT (DELEGACIÓN) ---
 
-    private void HandleMovement()
+    public void OnMove(InputValue value)
     {
-        Vector3 move = new Vector3(moveInput.x, 0f, moveInput.y);
-        if (move.sqrMagnitude > 0.0001f)
-        {
-            rb.MovePosition(rb.position + move * moveSpeed * Time.fixedDeltaTime);
-            Quaternion targetRot = Quaternion.LookRotation(move.normalized, Vector3.up);
-            rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRot, rotationSpeed * Time.fixedDeltaTime));
-        }
+        playerMovement.SetMoveInput(value.Get<Vector2>());
     }
-
-    public void OnMove(InputValue value) { moveInput = value.Get<Vector2>(); }
-    public void OnMeleeAttack(InputValue value) { if (value.isPressed) UseAbility(meleeAbility); }
-    public void OnRangedAttack(InputValue value) { if (value.isPressed) UseAbility(rangedAbility); }
-    public void OnInvisibility(InputValue value) { if (value.isPressed) UseAbility(invisibilityAbility); }
     
-    private void UseAbility(AbilitySO ability)
+    public void OnMeleeAttack(InputValue value)
     {
-        if (ability == null) return;
-        if (ability is IAimable aimableAbility)
+        if (value.isPressed)
         {
-            aimableAbility.aimSource = aimPoint;
+            playerAbilityHandler.UseMeleeAbility();
         }
-        ability.Execute(gameObject);
     }
 
-    // --- MÉTODO EVOLVEABILITY CORREGIDO ---
-    public void EvolveAbility(AbilitySlot slot, AbilitySO newAbility)
+    public void OnRangedAttack(InputValue value)
     {
-        switch (slot)
+        if (value.isPressed)
         {
-            case AbilitySlot.Melee:
-                meleeAbility = newAbility;
-                break;
-            case AbilitySlot.Ranged:
-                rangedAbility = newAbility;
-                break;
-            case AbilitySlot.Invisibility:
-                invisibilityAbility = newAbility;
-                break;
+            playerAbilityHandler.UseRangedAbility();
         }
-        Debug.Log($"<color=cyan>Habilidad del slot {slot} evolucionada a: {newAbility?.abilityName ?? "ninguna"}</color>");
     }
+
+    public void OnInvisibility(InputValue value)
+    {
+        if (value.isPressed)
+        {
+            playerAbilityHandler.UseInvisibilityAbility();
+        }
+    }
+
+   
 }

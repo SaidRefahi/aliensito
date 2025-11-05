@@ -3,10 +3,13 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "Orgullo Racial", menuName = "Habilidades/Melee/Orgullo Racial")]
 public class OrgulloRacialSO : MeleeAbilitySO
 {
-    public override void PerformMelee(GameObject user, float finalDamage)
+    // --- ¡FIRMA MODIFICADA! ---
+    public override void PerformMelee(GameObject user, float finalDamage, LayerMask damageLayers)
     {
         Transform source = (aimSource != null) ? aimSource : user.transform;
-        Collider[] hits = Physics.OverlapSphere(source.position, range, targetLayers);
+        
+        // --- ¡LÍNEA MODIFICADA! ---
+        Collider[] hits = Physics.OverlapSphere(source.position, range, damageLayers);
 
         foreach (var hit in hits)
         {

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39eeef8781a526d448de5d5a8b2c4cef, type: 3}
+  m_Name: Control de Plagas 2
+  m_EditorClassIdentifier: Assembly-CSharp::ControlDePlagasSO
+  abilityName: Control de plagas
+  icon: {fileID: 21300000, guid: 4ddc3c228fdfb984eb497be43e4b91b8, type: 3}
+  description: Caza en masa
+  slot: 1
+  maxUses: 20
+  nextLevelAbility: {fileID: 0}
+  baseAbility: {fileID: 11400000, guid: 6ab75a0751d48034ca2486f6d717365a, type: 2}
+  projectilePrefab: {fileID: 3318043773415785723, guid: 7b6cc435699a0a949a5aeec089532b58, type: 3}
+  projectileSpeed: 25
+  projectilePoolTag: Projectile_Basic
+  projectileCount: 5
+  spreadAngle: 30

@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5dfafb0bfc26bde4cb7e3ce7898a0992, type: 3}
+  m_Name: Dominio 1
+  m_EditorClassIdentifier: Assembly-CSharp::DominioSO
+  abilityName: Dominio
+  icon: {fileID: 21300000, guid: 9c1bd758ff5093a428bf7013bb9aac33, type: 3}
+  description: Envenena las masas a tu alrededor
+  slot: 2
+  maxUses: 7
+  nextLevelAbility: {fileID: 11400000, guid: 026ca7c509db5b047a3a10acefe1b021, type: 2}
+  baseAbility: {fileID: 11400000, guid: 043a07def6e2a644689a47ad120593a3, type: 2}
+  duration: 3
+  invisibilityAlpha: 0.3
+  invisibilityColor: {r: 0.4056604, g: 0.07425548, b: 0.07079922, a: 1}
+  changeLayer: 1
+  auraRadius: 3
+  poisonDamagePerSecond: 4
+  poisonDuration: 5
+  enemyLayers:
+    serializedVersion: 2
+    m_Bits: 128

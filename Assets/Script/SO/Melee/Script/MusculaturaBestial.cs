@@ -7,10 +7,14 @@ public class MusculaturaBestial : MeleeAbilitySO
     [Range(0f, 1f)] public float stunChance = 0.25f;
     public float stunDuration = 1.5f;
 
-    public override void PerformMelee(GameObject user, float finalDamage)
+    // --- ¡FIRMA MODIFICADA! ---
+    public override void PerformMelee(GameObject user, float finalDamage, LayerMask damageLayers)
     {
         Transform source = (aimSource != null) ? aimSource : user.transform;
-        Collider[] hits = Physics.OverlapSphere(source.position, range, targetLayers);
+        
+        // --- ¡LÍNEA MODIFICADA! ---
+        // Usamos el 'damageLayers' que nos pasan, ¡no el 'targetLayers' sucio!
+        Collider[] hits = Physics.OverlapSphere(source.position, range, damageLayers);
 
         foreach (var hit in hits)
         {
