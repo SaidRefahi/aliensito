@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections;
-using System.Collections.Generic;
+using System.Collections.Generic; // ¡Necesario para el Diccionario!
 using System; 
 
 [CreateAssetMenu(fileName = "Invisibilidad Basica", menuName = "Habilidades/Invisibilidad/Invisibilidad Basica")]
@@ -17,32 +17,55 @@ public class InvisibilitySO : AbilitySO
     [Header("Layer Settings")]
     public bool changeLayer = true;
 
-    // --- ¡MÉTODO CORREGIDO! ---
-    // 1. Cambiamos 'void' por 'bool'
+    // --- ¡NUEVAS LÍNEAS! ---
+    // (Añadimos el tracker de cooldown)
+    private readonly Dictionary<GameObject, float> lastUseTime = new Dictionary<GameObject, float>();
+    // --- FIN DE LÍNEAS NUEVAS ---
+
     public override bool Execute(GameObject user)
     {
-        // Esta lógica de "runner" es excelente para manejar
-        // efectos que duran en el tiempo (Coroutines).
-        InvisibilityRunner activeRunner = user.GetComponent<InvisibilityRunner>();
+        // --- ¡¡LÓGICA COMPLETAMENTE MODIFICADA!! ---
+
+        // 1. Comprobar si está en cooldown
+        if (!CanUse(user))
+        {
+            return false; // Fallar silenciosamente
+        }
         
-        // Si ya hay un runner (está invisible), paramos el efecto.
+        // 2. Comprobar si ya está invisible
+        InvisibilityRunner activeRunner = user.GetComponent<InvisibilityRunner>();
         if (activeRunner != null)
         {
-            activeRunner.Stop();
-        }
-        else // Si no está invisible, iniciamos el efecto.
-        {
-            InvisibilityRunner runner = user.AddComponent<InvisibilityRunner>();
-            runner.StartInvisibility(this);
+            // ¡Ya está activo! No hacer nada. Fallar.
+            return false;
         }
 
-        // 2. Devolvemos 'true' porque la habilidad se ejecutó
-        //    correctamente (ya sea para activar o desactivar).
+        // 3. ¡Ok, no está en CD y no está activo! ¡ACTIVAR!
+        InvisibilityRunner runner = user.AddComponent<InvisibilityRunner>();
+        runner.StartInvisibility(this);
+
+        // 4. Registrar el uso para el cooldown
+        lastUseTime[user] = Time.time;
         return true;
+        // --- FIN DE LÓGICA MODIFICADA ---
     }
+    
+    // --- ¡NUEVO MÉTODO! ---
+    private bool CanUse(GameObject user)
+    {
+        if (!lastUseTime.TryGetValue(user, out float last))
+        {
+            return true; // Nunca se ha usado
+        }
+        
+        // Comprueba si el tiempo actual ha superado el último uso + cooldown
+        // (El 'cooldown' es la variable de la clase base 'AbilitySO')
+        return Time.time >= last + cooldown;
+    }
+    // --- FIN DE MÉTODO NUEVO ---
 
     // --- Clase Ayudante Interna (Runner) ---
-    // (Esta clase interna está bien y no necesita cambios)
+    // (Esta clase interna no necesita cambios)
     public class InvisibilityRunner : MonoBehaviour
     {
         public event Action OnInvisibilityEnd;

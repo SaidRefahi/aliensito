@@ -159,6 +159,9 @@ MonoBehaviour:
   damageableLayers:
     serializedVersion: 2
     m_Bits: 64
+  obstacleLayers:
+    serializedVersion: 2
+    m_Bits: 2056
   lifetime: 5
   applyPoison: 0
   poisonDamagePerSecond: 2

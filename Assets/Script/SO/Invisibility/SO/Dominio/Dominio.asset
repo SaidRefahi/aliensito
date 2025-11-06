@@ -19,6 +19,7 @@ MonoBehaviour:
   maxUses: 5
   nextLevelAbility: {fileID: 11400000, guid: 4f19b2c0e366d2b408dc623710b13f63, type: 2}
   baseAbility: {fileID: 0}
+  cooldown: 4
   duration: 3
   invisibilityAlpha: 0.3
   invisibilityColor: {r: 0.4056604, g: 0.07425548, b: 0.07079922, a: 1}
@@ -26,6 +27,3 @@ MonoBehaviour:
   auraRadius: 2
   poisonDamagePerSecond: 3
   poisonDuration: 5
-  enemyLayers:
-    serializedVersion: 2
-    m_Bits: 128

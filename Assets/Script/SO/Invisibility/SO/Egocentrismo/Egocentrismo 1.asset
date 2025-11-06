@@ -19,8 +19,6 @@ MonoBehaviour:
   maxUses: 7
   nextLevelAbility: {fileID: 11400000, guid: 897059da521fb2945a11e668751a2303, type: 2}
   baseAbility: {fileID: 11400000, guid: 03db161918af4894dad5df38b383bed7, type: 2}
+  cooldown: 4
   radius: 3
   stunDuration: 2.5
-  enemyLayers:
-    serializedVersion: 2
-    m_Bits: 128

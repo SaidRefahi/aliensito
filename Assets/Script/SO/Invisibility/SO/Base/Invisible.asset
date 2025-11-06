@@ -16,6 +16,10 @@ MonoBehaviour:
   icon: {fileID: 0}
   description: 
   slot: 2
+  maxUses: 0
+  nextLevelAbility: {fileID: 0}
+  baseAbility: {fileID: 0}
+  cooldown: 4
   duration: 3
   invisibilityAlpha: 1
   invisibilityColor: {r: 0.8207547, g: 0.3213332, b: 0.64448833, a: 0.043137256}

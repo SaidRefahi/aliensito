@@ -1,4 +1,3 @@
-// Ruta: Assets/Script/SO/Invisibility/DominioSO.cs
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Dominio", menuName = "Habilidades/Invisibilidad/Dominio")]
@@ -8,40 +7,44 @@ public class DominioSO : InvisibilitySO
     public float auraRadius = 6f;
     public float poisonDamagePerSecond = 1f;
     public float poisonDuration = 3f;
-    public LayerMask enemyLayers;
+    // public LayerMask enemyLayers; // <-- ¡BORRADO! Usaremos el TargetingProfile (SRP)
 
-    // --- ¡MÉTODO CORREGIDO! ---
     public override bool Execute(GameObject user)
     {
-        var activeRunner = user.GetComponent<InvisibilitySO.InvisibilityRunner>();
-        if (activeRunner != null)
+        // 1. Ejecutar la lógica base (¡que ahora tiene el cooldown y el anti-spam!)
+        bool executed = base.Execute(user);
+
+        // 2. Si la base tuvo éxito (no estaba en CD, no estaba ya activo)...
+        if (executed)
         {
-            // Si ya eres invisible, desactiva la invisibilidad
-            activeRunner.Stop();
-            var existingAura = user.GetComponent<PoisonAura>();
-            if (existingAura != null) Destroy(existingAura);
-            
-            // La acción (detener) fue exitosa
-            return true;
-        }
-        else
-        {
-            // Activa la invisibilidad normal (llamando a la base)
-            // 1. Capturamos el resultado de la clase base
-            bool executed = base.Execute(user); 
-            
-            // 2. Si la base tuvo éxito (ej. no estaba en cooldown), añadimos el aura
-            if (executed)
+            // ...Obtenemos el TargetingProfile para saber a quién dañar
+            TargetingProfile targeting = user.GetComponent<TargetingProfile>();
+            if (targeting == null)
             {
-                var aura = user.AddComponent<PoisonAura>();
-                aura.radius = auraRadius;
-                aura.poisonDamage = poisonDamagePerSecond;
-                aura.poisonDuration = poisonDuration;
-                aura.enemyLayers = enemyLayers;
+                Debug.LogError($"¡DominioSO: {user.name} no tiene un componente TargetingProfile!");
+                return false;
             }
-            
-            // 3. Devolvemos el resultado de la ejecución base
-            return executed;
+
+            // ...Añadimos el componente de aura
+            var aura = user.AddComponent<PoisonAura>();
+            aura.radius = auraRadius;
+            aura.poisonDamage = poisonDamagePerSecond;
+            aura.poisonDuration = poisonDuration;
+            aura.enemyLayers = targeting.DamageableLayers; // ¡Pasa el LayerMask correcto!
+
+            // ...Buscamos el "runner" que la base acaba de crear
+            var runner = user.GetComponent<InvisibilitySO.InvisibilityRunner>();
+            if (runner != null)
+            {
+                // Y nos suscribimos a su evento OnEnd para destruir el aura (KISS)
+                runner.OnInvisibilityEnd += () => 
+                { 
+                    if (aura != null) GameObject.Destroy(aura); 
+                };
+            }
         }
+
+        // 3. Devuelve el resultado de la ejecución base.
+        return executed;
     }
 }

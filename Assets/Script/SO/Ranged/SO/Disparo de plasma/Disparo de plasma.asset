@@ -19,6 +19,7 @@ MonoBehaviour:
   maxUses: 10
   nextLevelAbility: {fileID: 11400000, guid: 4903bd234bd2de14c8b681adb772925c, type: 2}
   baseAbility: {fileID: 0}
+  cooldown: 2
   projectilePrefab: {fileID: 3318043773415785723, guid: 09057b69cd02c12479f9fe7e23fff3c0, type: 3}
   projectileSpeed: 25
   projectilePoolTag: ProjectileAcido

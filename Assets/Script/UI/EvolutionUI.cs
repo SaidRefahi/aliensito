@@ -1,20 +1,14 @@
-// Ruta: Assets/Scripts/EvolutionUI.cs
-// ACCIÓN: Reemplaza tu script existente con esta versión.
-
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.EventSystems; // <--- ¡NUEVO! Necesitamos esto
 
 public class EvolutionUI : MonoBehaviour
 {
     public GameObject evolutionPanel;
     public EvolutionCardUI[] optionCards;
 
-    // Ya no necesita una referencia al manager ni suscribirse a eventos.
-    // Borramos Start(), OnDestroy() y la variable evolutionManager.
-
     private void Awake()
     {
-        // Asegúrate de que está oculto al empezar
         evolutionPanel.SetActive(false);
     }
 
@@ -23,23 +17,31 @@ public class EvolutionUI : MonoBehaviour
     /// </summary>
     public void Show(List<AbilitySO> options, EvolutionManager manager)
     {
-        // El Manager ya ha pausado el juego.
-        // Esta clase solo se encarga de la parte VISUAL.
-        
         evolutionPanel.SetActive(true);
         for (int i = 0; i < optionCards.Length; i++)
         {
             if (i < options.Count)
             {
                 optionCards[i].gameObject.SetActive(true);
-                // Pasa la habilidad Y la referencia al manager
-                // para que el botón sepa a quién llamar
                 optionCards[i].Setup(options[i], manager); 
             }
             else
             {
                 optionCards[i].gameObject.SetActive(false);
             }
+        }
+
+        // --- ¡LA MAGIA DEL JOYSTICK EMPIEZA AQUÍ! ---
+
+        // 1. Limpiamos cualquier selección anterior (por si acaso)
+        EventSystem.current.SetSelectedGameObject(null); // <--- NUEVO
+
+        // 2. Si hay opciones, seleccionamos el botón de la PRIMERA carta
+        if (options.Count > 0)
+        {
+            // Le decimos al EventSystem: "¡Oye! El joystick ahora
+            // está controlando este botón".
+            EventSystem.current.SetSelectedGameObject(optionCards[0].selectButton.gameObject); // <--- NUEVO
         }
     }
 
@@ -48,7 +50,10 @@ public class EvolutionUI : MonoBehaviour
     /// </summary>
     public void Hide()
     {
-        // El Manager se encargará de despausar.
+        // Buena práctica: cuando se oculta el panel,
+        // le quitamos la selección a cualquier botón.
+        EventSystem.current.SetSelectedGameObject(null); // <--- NUEVO
+        
         evolutionPanel.SetActive(false);
     }
 }

@@ -19,8 +19,12 @@ MonoBehaviour:
   maxUses: 10
   nextLevelAbility: {fileID: 0}
   baseAbility: {fileID: 11400000, guid: c50b46f68fb11db48811af8045a591a7, type: 2}
+  cooldown: 4
   duration: 5
   invisibilityAlpha: 0.3
   invisibilityColor: {r: 0, g: 1, b: 1, a: 1}
   changeLayer: 1
   blinkDistance: 6
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 8

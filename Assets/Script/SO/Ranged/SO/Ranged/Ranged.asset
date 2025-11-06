@@ -16,6 +16,10 @@ MonoBehaviour:
   icon: {fileID: 0}
   description: 
   slot: 1
+  maxUses: 0
+  nextLevelAbility: {fileID: 0}
+  baseAbility: {fileID: 0}
+  cooldown: 2
   projectilePrefab: {fileID: 3318043773415785723, guid: 7b6cc435699a0a949a5aeec089532b58, type: 3}
   projectileSpeed: 20
   projectilePoolTag: Projectile_Basic
