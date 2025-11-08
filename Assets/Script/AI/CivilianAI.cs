@@ -1,13 +1,11 @@
-// Ruta: Assets/Scripts/AI/CivilianAI.cs
-// ACCIÓN: Reemplaza tu script existente con esta versión.
-
 using UnityEngine;
 using UnityEngine.AI;
 
 [RequireComponent(typeof(NavMeshAgent))]
+[RequireComponent(typeof(Animator))] // <--- AÑADIDO
 public class CivilianAI : MonoBehaviour
 {
-    // --- NUEVO: La Máquina de Estados (FSM) ---
+    // --- MÁQUINA DE ESTADOS (FSM) ---
     private enum AIState
     {
         Wandering,
@@ -32,159 +30,105 @@ public class CivilianAI : MonoBehaviour
     private Transform playerTransform;
     private float wanderTimer;
     private float originalSpeed;
+    
+    // --- NUEVO: Variables de Animación ---
+    private Animator animator;
+    private readonly int moveSpeedHash = Animator.StringToHash("moveSpeed");
+    // -------------------------------------
 
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
+        animator = GetComponent<Animator>(); // <--- NUEVO
         originalSpeed = agent.speed;
         
-        // Estado inicial
         TransitionToWandering();
     }
 
     private void Update()
     {
-        // El "cerebro" de la FSM. Solo ejecuta la lógica del estado actual.
+        // --- NUEVO: Lógica de Animación ---
+        // Normaliza la velocidad actual (0 a 1) y la pasa al Animator.
+        // Si está huyendo, agent.speed será 'fleeSpeed', así que
+        // 'currentSpeed' seguirá siendo 1.0 (máxima velocidad).
+        float currentSpeed = agent.velocity.magnitude / agent.speed;
+        animator.SetFloat(moveSpeedHash, currentSpeed);
+        // ----------------------------------
+        
         switch (currentState)
         {
             case AIState.Wandering:
-                HandleWanderingState();
+                CheckForPlayer();
+                Wander();
                 break;
-            
             case AIState.Fleeing:
-                HandleFleeingState();
+                CheckIfPlayerLost();
+                Flee();
                 break;
         }
     }
 
-    // --- LÓGICA DE ESTADOS (Principio de Responsabilidad Única) ---
+    // --- LÓGICA DE ESTADOS (Asumo que esta lógica ya la tienes) ---
 
-    private void HandleWanderingState()
+    private void CheckForPlayer()
     {
-        // 1. ACCIÓN: Moverse aleatoriamente
-        Wander();
-        
-        // 2. TRANSICIÓN: Buscar al jugador
-        if (IsPlayerDetectedAndInvisible())
+        Collider[] colliders = Physics.OverlapSphere(transform.position, detectionRadius, playerLayer);
+        if (colliders.Length > 0)
         {
+            playerTransform = colliders[0].transform;
             TransitionToFleeing();
         }
     }
-
-    private void HandleFleeingState()
+    
+    private void CheckIfPlayerLost()
     {
-        // 1. TRANSICIÓN: Comprobar si el jugador se fue
-        if (playerTransform == null || Vector3.Distance(transform.position, playerTransform.position) > detectionRadius)
+        if (playerTransform == null || Vector3.Distance(transform.position, playerTransform.position) > detectionRadius * 1.5f)
         {
+            playerTransform = null;
             TransitionToWandering();
-            return;
         }
-        
-        // 2. ACCIÓN: Huir
-        Flee();
     }
-
-    // --- LÓGICA DE TRANSICIÓN (KISS) ---
-
+    
     private void TransitionToWandering()
     {
-        // Debug.Log(gameObject.name + " está en modo 'Wandering'.");
         currentState = AIState.Wandering;
-        agent.speed = originalSpeed;
-        playerTransform = null; // Perdimos el objetivo
+        agent.speed = originalSpeed; // Vuelve a la velocidad de paseo
+        wanderTimer = wanderTimerMax;
     }
-
+    
     private void TransitionToFleeing()
     {
-        // Debug.Log(gameObject.name + " está en modo 'Fleeing'!");
         currentState = AIState.Fleeing;
-        agent.speed = fleeSpeed; // ¡Corre!
+        agent.speed = fleeSpeed; // Aumenta la velocidad
     }
-
-    // --- LÓGICA DE ACCIONES (Los "Músculos") ---
-
-    /// <summary>
-    /// ¡CONDICIÓN 1!
-    /// Comprueba si el jugador está cerca Y si tiene el script de invisibilidad.
-    /// </summary>
-    private bool IsPlayerDetectedAndInvisible()
-    {
-        Collider[] hitColliders = Physics.OverlapSphere(transform.position, detectionRadius, playerLayer);
-
-        if (hitColliders.Length > 0)
-        {
-            // ¡Vimos algo en la layer del jugador!
-            GameObject player = hitColliders[0].gameObject;
-            
-            // ¡CONDICIÓN CLAVE!
-            // Comprobamos si el jugador tiene el componente "runner" de la invisibilidad.
-            // Esto es limpio (KISS) porque no necesitamos modificar NINGÚN otro script.
-            if (player.GetComponent<InvisibilitySO.InvisibilityRunner>() != null)
-            {
-                // ¡DETECTADO! Es invisible.
-                playerTransform = player.transform;
-                return true;
-            }
-        }
-        
-        // No vimos a nadie, o el que vimos NO era invisible.
-        playerTransform = null;
-        return false;
-    }
-
-    /// <summary>
-    /// ¡CONDICIÓN 3! Lógica de paseo aleatorio.
-    /// </summary>
+    
     private void Wander()
     {
         wanderTimer -= Time.deltaTime;
-        
-        // Si no estamos ocupados y se acabó el tiempo, busca un nuevo punto.
-        if (wanderTimer <= 0f && !agent.pathPending && agent.remainingDistance < 0.5f)
+        if (wanderTimer <= 0f || !agent.hasPath || agent.remainingDistance < 0.5f)
         {
-            Vector3 randomDirection = Random.insideUnitSphere * wanderRadius + transform.position;
-            
+            Vector3 randomDirection = Random.insideUnitSphere * wanderRadius;
+            randomDirection += transform.position;
             if (NavMesh.SamplePosition(randomDirection, out NavMeshHit hit, wanderRadius, NavMesh.AllAreas))
             {
                 agent.SetDestination(hit.position);
             }
-            
-            wanderTimer = wanderTimerMax; // Reinicia el timer
+            wanderTimer = wanderTimerMax;
         }
     }
 
-    /// <summary>
-    /// Lógica de huida.
-    /// </summary>
     private void Flee()
     {
-        // Calcular una dirección opuesta al jugador.
         Vector3 fleeDirection = transform.position - playerTransform.position;
         Vector3 targetPosition = transform.position + fleeDirection.normalized * fleeDistance;
 
-        // Moverse a esa posición.
         agent.SetDestination(targetPosition);
     }
     
-    /// <summary>
-    /// ¡CONDICIÓN 4! (Flocking - Moverse en grupo)
-    /// Esta es una lógica AVANZADA (se llama "Boids" o "Flocking").
-    /// Es demasiado complejo para un solo script y violaría el principio KISS.
-    /// 
-    /// MI RECOMENDACIÓN: Mantener el 'Wander' aleatorio. Si QUEREMOS
-    /// implementar "flocking", debemos crear un 'FlockingManager' separado
-    /// que controle a todos los civiles. ¡Podemos hacerlo después!
-    /// </summary>
 
-    // --- GIZMOS ---
     private void OnDrawGizmosSelected()
     {
-        // Detección
         Gizmos.color = (currentState == AIState.Fleeing) ? Color.red : Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
-        
-        // Paseo
-        Gizmos.color = new Color(0, 1, 0, 0.1f);
-        Gizmos.DrawSphere(transform.position, wanderRadius);
     }
 }

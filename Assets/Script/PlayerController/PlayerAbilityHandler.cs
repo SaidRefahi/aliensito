@@ -4,10 +4,7 @@ using System.Collections.Generic;
 
 public class PlayerAbilityHandler : MonoBehaviour
 {
-    // --- CLASE INTERNA PARA GESTIONAR ESTADO ---
-    /// <summary>
-    /// Contenedor que almacena la habilidad equipada y sus usos restantes.
-    /// </summary>
+    // ... (Tu clase interna EquippedAbilitySlot no cambia) ...
     private class EquippedAbilitySlot
     {
         public AbilitySO Ability { get; private set; }
@@ -21,113 +18,143 @@ public class PlayerAbilityHandler : MonoBehaviour
         public void Equip(AbilitySO newAbility)
         {
             Ability = newAbility;
-            // 0 = infinito, de lo contrario usa los usos de la habilidad
             UsesLeft = (newAbility.maxUses == 0) ? int.MaxValue : newAbility.maxUses;
         }
-
-        /// <summary>
-        /// Gasta un uso. Devuelve 'true' si se quedó sin usos.
-        /// </summary>
+        
         public bool ConsumeUse()
         {
-            if (Ability.maxUses == 0) return false; // Es infinito
-
+            if (Ability.maxUses == 0) return false;
             UsesLeft--;
             return UsesLeft <= 0;
         }
     }
-    // ---------------------------------------------
     
+    // ... (Tus Headers y variables no cambian) ...
     [Header("Dependencias")]
     [SerializeField] private Transform aimPoint;
 
     [Header("Habilidades Básicas (Default)")]
-    [Tooltip("Habilidad a la que se revierte cuando se gastan los usos.")]
     [SerializeField] private AbilitySO defaultMeleeAbility;
     [SerializeField] private AbilitySO defaultRangedAbility;
     [SerializeField] private AbilitySO defaultInvisibilityAbility;
-
-    // Slots de habilidad que contienen el estado
+    
     private EquippedAbilitySlot meleeSlot;
     private EquippedAbilitySlot rangedSlot;
     private EquippedAbilitySlot invisibilitySlot;
 
-    // --- ¡NUEVO EVENTO! ---
-    /// <summary>
-    /// Se dispara cuando una habilidad se queda sin usos.
-    /// Pasa la habilidad que se acaba de agotar (ej. "Toque Nocivo").
-    /// </summary>
     public event Action<AbilitySO> OnAbilityDepleted;
-
-    // --- Eventos para el Animator (se mantienen) ---
+    
     public event Action OnMeleeAttackTrigger;
     public event Action OnRangedAttackTrigger;
     public event Action OnAbilityTrigger;
 
+    // ... (Awake no cambia) ...
     private void Awake()
     {
-        // Inicializamos los slots con las habilidades básicas (usos infinitos)
         meleeSlot = new EquippedAbilitySlot(defaultMeleeAbility);
         rangedSlot = new EquippedAbilitySlot(defaultRangedAbility);
         invisibilitySlot = new EquippedAbilitySlot(defaultInvisibilityAbility);
     }
     
-    // --- MÉTODOS DE USO (MODIFICADOS) ---
+    // --- ¡¡MÉTODO MODIFICADO!! ---
     public void UseMeleeAbility()
     {
-        UseAbility(meleeSlot, defaultMeleeAbility, OnMeleeAttackTrigger);
+        // ¡LA LÓGICA CAMBIÓ!
+        // Esta función, llamada por el input, ahora SOLO se
+        // encarga de disparar la animación.
+        // El PlayerAnimator se encargará de los combos.
+        // La lógica de daño/cooldown se llamará desde la animación.
+        OnMeleeAttackTrigger?.Invoke();
+        
+        // ¡HEMOS QUITADO TODA la lógica de 'UseAbility' de aquí!
     }
 
+    // --- ¡ESTOS MÉTODOS NO CAMBIAN! ---
     public void UseRangedAbility()
     {
+        // Los proyectiles se disparan al instante,
+        // así que mantienen la lógica original.
         UseAbility(rangedSlot, defaultRangedAbility, OnRangedAttackTrigger);
     }
 
     public void UseInvisibilityAbility()
     {
+        // La invisibilidad se activa al instante.
         UseAbility(invisibilitySlot, defaultInvisibilityAbility, OnAbilityTrigger);
     }
-
+    
     /// <summary>
-    /// Lógica central refactorizada para usar, consumir y revertir habilidades.
+    /// ¡ESTE MÉTODO SERÁ LLAMADO POR EL EVENTO DE ANIMACIÓN!
+    /// Contiene la lógica que 'UseMeleeAbility' solía tener.
     /// </summary>
-    private void UseAbility(EquippedAbilitySlot slot, AbilitySO defaultAbility, Action animatorTrigger)
+    public void ApplyMeleeHit()
     {
+        EquippedAbilitySlot slot = meleeSlot;
+        AbilitySO defaultAbility = defaultMeleeAbility;
+        
         if (slot.Ability == null) return;
         
-        // 1. Asigna el AimSource si es necesario
+        // 1. Asigna el AimSource (si tu melee lo necesita)
         if (slot.Ability is IAimable aimableAbility)
         {
             aimableAbility.aimSource = aimPoint;
         }
 
-        // 2. Intenta ejecutar la habilidad. Si falla (cooldown), no hagas nada.
+        // 2. Intenta ejecutar la habilidad.
+        // ¡AQUÍ es donde se comprueba el COOLDOWN!
+        // Si la anim se disparó pero el CD no estaba listo,
+        // el 'Execute' devolverá false y no habrá daño.
         if (!slot.Ability.Execute(gameObject))
         {
             return;
         }
-
-        // 3. ¡Éxito! Dispara la animación
-        animatorTrigger?.Invoke();
-
-        // 4. Consume un uso y comprueba si se agotó
+        
+        // 3. ¡Éxito! El golpe conectó y el CD estaba listo.
+        // Ahora consume un uso y comprueba si se agotó.
         if (slot.ConsumeUse())
         {
             AbilitySO depletedAbility = slot.Ability;
             Debug.Log($"¡Se agotaron los usos de {depletedAbility.abilityName}!");
             
-            // 5. Revierte a la habilidad básica
+            // Revierte a la habilidad básica
             slot.Equip(defaultAbility);
             
-            // 6. ¡Dispara el evento para que el EvolutionManager lo sepa!
+            // Dispara el evento para el EvolutionManager
+            OnAbilityDepleted?.Invoke(depletedAbility);
+        }
+    }
+
+    // --- ¡ESTOS MÉTODOS NO CAMBIAN! ---
+
+    /// <summary>
+    /// Lógica central refactorizada (Usada por Ranged e Invisibility)
+    /// </summary>
+    private void UseAbility(EquippedAbilitySlot slot, AbilitySO defaultAbility, Action animatorTrigger)
+    {
+        if (slot.Ability == null) return;
+        
+        if (slot.Ability is IAimable aimableAbility)
+        {
+            aimableAbility.aimSource = aimPoint;
+        }
+
+        if (!slot.Ability.Execute(gameObject))
+        {
+            return;
+        }
+
+        animatorTrigger?.Invoke();
+
+        if (slot.ConsumeUse())
+        {
+            AbilitySO depletedAbility = slot.Ability;
+            Debug.Log($"¡Se agotaron los usos de {depletedAbility.abilityName}!");
+            slot.Equip(defaultAbility);
             OnAbilityDepleted?.Invoke(depletedAbility);
         }
     }
     
-    // --- MÉTODO DE EVOLUCIÓN (MODIFICADO) ---
-    /// <summary>
-    /// API para que el EvolutionManager pueda equipar la nueva habilidad.
-    /// </summary>
+    // ... (EvolveAbility y GetEquippedAbilities no cambian) ...
     public void EvolveAbility(AbilitySlot slot, AbilitySO newAbility)
     {
         switch (slot)
@@ -143,19 +170,19 @@ public class PlayerAbilityHandler : MonoBehaviour
                 break;
         }
     }
-
-    // --- MÉTODO DE CONSULTA (MODIFICADO) ---
-    /// <summary>
-    /// Devuelve las habilidades (no los slots) que el jugador tiene equipadas.
-    /// </summary>
+    
     public List<AbilitySO> GetEquippedAbilities()
     {
         List<AbilitySO> equipped = new List<AbilitySO>();
-        
         if (meleeSlot.Ability != null) equipped.Add(meleeSlot.Ability);
         if (rangedSlot.Ability != null) equipped.Add(rangedSlot.Ability);
         if (invisibilitySlot.Ability != null) equipped.Add(invisibilitySlot.Ability);
-        
         return equipped;
+    }
+    
+  
+    public int GetMaxMeleeCombo()
+    {
+        return 3;
     }
 }

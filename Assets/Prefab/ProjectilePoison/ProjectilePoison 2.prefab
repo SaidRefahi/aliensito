@@ -69,7 +69,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 08e538d25e157c94988c97e8e1f6bcb9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -159,6 +159,9 @@ MonoBehaviour:
   damageableLayers:
     serializedVersion: 2
     m_Bits: 128
+  obstacleLayers:
+    serializedVersion: 2
+    m_Bits: 0
   lifetime: 5
   applyPoison: 1
   poisonDamagePerSecond: 4

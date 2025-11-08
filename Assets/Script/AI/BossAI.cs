@@ -1,5 +1,5 @@
 // Ruta: Assets/Scripts/AI/BossAI.cs
-// ACCIÓN: ¡Reemplaza tu script anterior con esta versión MÁS TÁCTICA!
+// ACCIÓN: ¡Reemplaza tu script anterior con esta versión MÁS INTELIGENTE!
 
 using UnityEngine;
 using UnityEngine.AI;
@@ -21,7 +21,7 @@ public class BossAI : MonoBehaviour
         Cooldown,
         Deciding,
         Repositioning,
-        Invisibility // ¡Ahora es "Reposicionamiento Invisible"!
+        Invisibility
     }
     private BossState currentState;
     // ---------------------------------
@@ -125,31 +125,42 @@ public class BossAI : MonoBehaviour
         }
     }
 
+    // --- ¡¡MÉTODO MODIFICADO (EL ARREGLO)!! ---
     private void HandleChasingState()
     {
+        // TRANSICIÓN DE SALIDA (Global): ¡El jugador escapó!
         if (!IsPlayerInEngagementRange())
         {
             TransitionTo(BossState.Waiting);
             return;
         }
 
-        LookAtPlayer();
+        // ¡¡LÓGICA MEJORADA, PA!!
+        LookAtPlayer(); // El jefe siempre te mira mientras decide
+
         float distance = Vector3.Distance(transform.position, playerTransform.position);
 
         if (distance < minFiringRange)
         {
+            // 1. ¡Estás muy cerca! ¡HUYE!
+            // ¡ESTO ARREGLA EL BUG DE CHOCAR INFINITO!
+            // Le decimos a la FSM que cambie a 'Reposicionarse'.
             TransitionTo(BossState.Repositioning);
         }
         else if (distance > idealFiringRange)
         {
+            // 2. ¡Estás muy lejos! ¡ACÉRCATE!
             agent.isStopped = false;
             agent.SetDestination(playerTransform.position);
         }
         else
         {
+            // 3. ¡Estás en la "zona mortal"! ¡PERFECTO!
+            // ¡DEJA DE MOVERTE Y APUNTA!
             TransitionTo(BossState.Aiming);
         }
     }
+    // --- FIN DEL MÉTODO MODIFICADO ---
 
     private void HandleAimingState()
     {
@@ -217,15 +228,17 @@ public class BossAI : MonoBehaviour
             return;
         }
         
+        // ¡Se reposiciona LEJOS mientras mira al jugador!
         LookAtPlayer(); 
         
+        // TRANSICIÓN: Si llega a su destino...
         if (!agent.pathPending && agent.remainingDistance < 1.0f)
         {
+            // ¡Pasa a Chasing para re-evaluar la distancia!
             TransitionTo(BossState.Chasing); 
         }
     }
 
-    // --- ¡¡MÉTODO MODIFICADO (EL ARREGLO)!! ---
     private void HandleInvisibilityState()
     {
         if (!IsPlayerInEngagementRange())
@@ -233,24 +246,11 @@ public class BossAI : MonoBehaviour
             TransitionTo(BossState.Waiting);
             return;
         }
-        
-        // 1. ACCIÓN: ¡Sigue mirando al jugador mientras te mueves!
-        LookAtPlayer();
 
-        // 2. TRANSICIÓN: ¿Se acabó el tiempo de invisibilidad?
         stateTimer -= Time.deltaTime;
         if (stateTimer <= 0f)
         {
-            // ¡Tiempo fuera! Vuelve a cazar.
-            TransitionTo(BossState.Chasing);
-        }
-        
-        // 3. TRANSICIÓN: ¿Llegaste al destino ANTES de que se acabe el tiempo?
-        if (!agent.pathPending && agent.remainingDistance < 1.0f)
-        {
-            // ¡Llegaste! Quédate quieto y "acecha"
-            // hasta que se acabe el tiempo.
-            agent.isStopped = true;
+            TransitionTo(BossState.Repositioning);
         }
     }
 
@@ -258,8 +258,10 @@ public class BossAI : MonoBehaviour
 
     private void TransitionTo(BossState newState)
     {
+        // Evita re-entrar al mismo estado (¡previene bugs!)
         if (currentState == newState) return; 
         
+        // Lógica de "OnExit" (limpieza)
         if (currentState == BossState.Attacking && attackCoroutine != null)
         {
             StopCoroutine(attackCoroutine);
@@ -301,19 +303,14 @@ public class BossAI : MonoBehaviour
             case BossState.Repositioning:
                 agent.isStopped = false;
                 agent.speed = 5f; 
-                SetNewRepositionDestination();
+                SetNewRepositionDestination(); // ¡Calcula el nuevo punto LEJOS!
                 break;
                 
-            // --- ¡¡LÓGICA 'OnEnter' MODIFICADA!! ---
             case BossState.Invisibility:
-                // ¡¡AQUÍ ESTÁ LA MAGIA!!
-                agent.isStopped = false; // ¡NO TE QUEDES TIESO!
-                agent.speed = 6f; // ¡Velocidad de reposicionamiento sigiloso!
-                SetNewRepositionDestination(); // ¡BUSCA UN NUEVO PUNTO!
-                
+                agent.isStopped = true; 
                 invisibilityCharges--;
-                FireAbility(invisibilityAbilitySO); // ¡ACTIVA EL PODER!
-                stateTimer = invisibilityDuration; // ¡INICIA EL TIMER!
+                FireAbility(invisibilityAbilitySO);
+                stateTimer = invisibilityDuration;
                 break;
         }
     }
@@ -378,7 +375,10 @@ public class BossAI : MonoBehaviour
             return;
         }
 
+        // 1. Calcular la dirección 100% opuesta al jugador.
         Vector3 dirAwayFromPlayer = (transform.position - playerTransform.position).normalized;
+        
+        // 2. Calcular el punto de destino "lejos"
         Vector3 finalDestination = transform.position + dirAwayFromPlayer * repositionDistance;
         
         if (NavMesh.SamplePosition(finalDestination, out NavMeshHit hit, repositionDistance * 1.5f, NavMesh.AllAreas))
@@ -387,6 +387,7 @@ public class BossAI : MonoBehaviour
         }
         else
         {
+            // Plan B: moverse a un costado (strafe)
             Vector3 strafeDir = transform.right * (Random.value > 0.5f ? 1f : -1f);
             finalDestination = transform.position + strafeDir * repositionDistance;
             

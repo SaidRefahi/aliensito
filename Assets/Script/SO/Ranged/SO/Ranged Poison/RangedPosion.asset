@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RangedAttackSO
   abilityName: Disparo de plasma
   icon: {fileID: 21300000, guid: 8066e15c4e3df6e4f9806f9d5f71e70a, type: 3}
-  description: 
+  description: Dispara y huye
   slot: 1
   maxUses: 10
   nextLevelAbility: {fileID: 11400000, guid: 5ba90f6330e1eae4bb004a08e7eb0507, type: 2}
