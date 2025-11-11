@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d95a16da8c3cf0468272845cafc875b, type: 3}
+  m_Name: Disparo Rapido 1
+  m_EditorClassIdentifier: Assembly-CSharp::RangedAttackSO
+  abilityName: Francotirador +1
+  icon: {fileID: 21300000, guid: 9b0be4ef9a8e4b34eaa96ebc919f52a0, type: 3}
+  description: Proyectil veloz y letal
+  slot: 1
+  maxUses: 25
+  nextLevelAbility: {fileID: 11400000, guid: efaf6ead6441e79468d5975253b6d86d, type: 2}
+  baseAbility: {fileID: 11400000, guid: c43bf7bbe2aa14e4581e0d8d76b58465, type: 2}
+  cooldown: 2
+  projectilePrefab: {fileID: 3318043773415785723, guid: 0d4afa7c0ff72194387bd3ba5f414485, type: 3}
+  projectileSpeed: 35
+  projectilePoolTag: Projectile_Basic

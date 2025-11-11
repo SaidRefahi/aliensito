@@ -4,7 +4,7 @@ using System.Collections;
 [RequireComponent(typeof(Renderer))]
 public class HitFeedback : MonoBehaviour
 {
-    [Header("Configuración del Efecto")]
+    [Header("Efecto Squash & Stretch")]
     [Tooltip("El color al que flashea el enemigo al ser golpeado.")]
     [SerializeField] private Color hitColor = Color.red;
     [Tooltip("Duración total del flash y el estiramiento (en segundos).")]
@@ -14,6 +14,11 @@ public class HitFeedback : MonoBehaviour
     [Tooltip("Cuánto se contrae horizontalmente (ej. 0.8 = 80%).")]
     [SerializeField] private float squashAmount = 0.8f;
 
+    [Header("Efecto de Partículas (Pooling)")]
+    [Tooltip("El 'Tag' (Etiqueta) de la partícula en el PoolManager. " +
+             "Debe coincidir con el PoolManager y el script ReturnToPool.")]
+    [SerializeField] private string particlePoolTag = "HitEffect"; 
+
     private Renderer enemyRenderer;
     private Color originalColor;
     private Vector3 originalScale;
@@ -21,48 +26,54 @@ public class HitFeedback : MonoBehaviour
 
     private void Awake()
     {
-        // Guardamos los valores originales al inicio
         enemyRenderer = GetComponent<Renderer>();
         originalColor = enemyRenderer.material.color;
         originalScale = transform.localScale;
     }
 
-    /// <summary>
-    /// Método público que llama el script de Health para iniciar el efecto.
-    /// </summary>
     public void PlayEffect()
     {
-        // Si ya hay un efecto corriendo (por golpes muy rápidos),
-        // lo detenemos y reseteamos antes de iniciar el nuevo.
+        // Detener corrutina anterior si existe
         if (activeHitRoutine != null)
         {
             StopCoroutine(activeHitRoutine);
             ResetVisuals();
         }
+
+        // --- ¡¡LÓGICA DE POOLING CORREGIDA!! ---
+        if (PoolManager.Instance != null && !string.IsNullOrEmpty(particlePoolTag))
+        {
+            // ¡Llamada corregida! Usamos "SpawnFromPool" 
+            // como se llama en tu script
+            PoolManager.Instance.SpawnFromPool(particlePoolTag, transform.position, Quaternion.identity);
+        }
+        else
+        {
+            if (PoolManager.Instance == null)
+                Debug.LogWarning("PoolManager.Instance no encontrado en la escena.");
+        }
+        // -----------------------------------------
+
+        // Iniciar la corrutina de squash/stretch
         activeHitRoutine = StartCoroutine(HitEffectRoutine());
     }
 
     private IEnumerator HitEffectRoutine()
     {
-        // 1. Aplicar el efecto (Estirar y colorear)
+        // 1. Aplicar el efecto
         enemyRenderer.material.color = hitColor;
         transform.localScale = new Vector3(originalScale.x * squashAmount, 
                                            originalScale.y * stretchAmount, 
                                            originalScale.z * squashAmount);
 
-        // 2. Esperar una fracción de segundo
-        // Usamos WaitForSecondsRealtime para que el efecto funcione
-        // incluso si el juego está pausado (Time.timeScale = 0).
+        // 2. Esperar
         yield return new WaitForSecondsRealtime(effectDuration);
 
-        // 3. Revertir a la normalidad
+        // 3. Revertir
         ResetVisuals();
         activeHitRoutine = null;
     }
 
-    /// <summary>
-    /// Restaura el objeto a su estado visual original.
-    /// </summary>
     private void ResetVisuals()
     {
         enemyRenderer.material.color = originalColor;

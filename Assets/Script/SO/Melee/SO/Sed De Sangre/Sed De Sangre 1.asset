@@ -12,18 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 11b829ddd732a88419033c066579b267, type: 3}
   m_Name: Sed De Sangre 1
   m_EditorClassIdentifier: Assembly-CSharp::MeleeSedDeSangreSO
-  abilityName: Sed De Sangre
+  abilityName: Sed De Sangre +1
   icon: {fileID: 21300000, guid: 8747fbd096b50834ab608c29a3c05bcc, type: 3}
-  description: Devora su sangre y recuperate
+  description: Recupera salud con cada golpe
   slot: 0
   maxUses: 14
   nextLevelAbility: {fileID: 11400000, guid: 3c511ad6212b3e94a92520929a2b9669, type: 2}
   baseAbility: {fileID: 11400000, guid: df0f00fe2171c96469810d1d8594cf8c, type: 2}
+  cooldown: 0.5
   damage: 18
   range: 2
-  targetLayers:
-    serializedVersion: 2
-    m_Bits: 128
   criticalDamageMultiplier: 2
   attackCooldown: 0.5
   enableCombos: 0

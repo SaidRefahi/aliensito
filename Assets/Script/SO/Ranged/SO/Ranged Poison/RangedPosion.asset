@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d95a16da8c3cf0468272845cafc875b, type: 3}
   m_Name: RangedPosion
   m_EditorClassIdentifier: Assembly-CSharp::RangedAttackSO
-  abilityName: Disparo de plasma
+  abilityName: Disparo acido
   icon: {fileID: 21300000, guid: 8066e15c4e3df6e4f9806f9d5f71e70a, type: 3}
-  description: Dispara y huye
+  description: Envenena a distancia
   slot: 1
   maxUses: 10
   nextLevelAbility: {fileID: 11400000, guid: 5ba90f6330e1eae4bb004a08e7eb0507, type: 2}

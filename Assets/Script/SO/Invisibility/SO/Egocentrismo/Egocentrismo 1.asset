@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EgocentrismoSO
   abilityName: Egocentrismo
   icon: {fileID: 21300000, guid: 57a57e5de7a11a945a125ef4383fe3e1, type: 3}
-  description: Aturde las masas a tu alrededor
+  description: Aturde a los enemigos a tu alrededor
   slot: 2
   maxUses: 7
   nextLevelAbility: {fileID: 11400000, guid: 897059da521fb2945a11e668751a2303, type: 2}
@@ -22,3 +22,4 @@ MonoBehaviour:
   cooldown: 4
   radius: 3
   stunDuration: 2.5
+  vfxPoolTag: NovaVFX

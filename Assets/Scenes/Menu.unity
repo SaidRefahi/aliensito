@@ -1881,7 +1881,15 @@ MonoBehaviour:
   musicTracks:
   - name: Musica_Menu
     clip: {fileID: 8300000, guid: ec1950f32ccd3624485a341ce39eabc6, type: 3}
-  sfxClips: []
+  - name: Level1_BGM
+    clip: {fileID: 8300000, guid: 953ca09a6e0515349864485e92c05e82, type: 3}
+  sfxClips:
+  - name: Player_Hit
+    clip: {fileID: 8300000, guid: f0375c26204ee4e0eabf997199a24f08, type: 3}
+  - name: Player_Death
+    clip: {fileID: 8300000, guid: 13485403feb754f1facba07ba73ed72e, type: 3}
+  - name: Enemy_Hit
+    clip: {fileID: 8300000, guid: 7293d905283c64d2198ea86644013fef, type: 3}
 --- !u!4 &1056091022
 Transform:
   m_ObjectHideFlags: 0

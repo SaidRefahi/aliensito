@@ -152,7 +152,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cedc95bec4c22747b6fcfe26d1714e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GeneticMaterial
-  amount: 10
+  amount: 35
   playerLayer:
     serializedVersion: 2
     m_Bits: 320

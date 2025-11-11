@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 39eeef8781a526d448de5d5a8b2c4cef, type: 3}
   m_Name: Control de Plagas 1
   m_EditorClassIdentifier: Assembly-CSharp::ControlDePlagasSO
-  abilityName: Control de plagas
+  abilityName: Control de plagas +1
   icon: {fileID: 21300000, guid: 4ddc3c228fdfb984eb497be43e4b91b8, type: 3}
-  description: Caza en masa
+  description: Dispara en area
   slot: 1
   maxUses: 14
   nextLevelAbility: {fileID: 11400000, guid: 5232cf0c02ede584781919e3e41f7f8d, type: 2}

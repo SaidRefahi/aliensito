@@ -8,27 +8,39 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Health bossHealth;
 
     private bool gameEnded = false;
-
-    private void Start()
-    {
-        // Suscribirse a eventos si los usás, o revisar en Update
-    }
+    // --- ¡NUEVA LÍNEA! ---
+    // Este "interruptor" nos dirá cuándo empezar a mirar la vida del jefe.
+    private bool bossFightHasStarted = false; 
 
     private void Update()
     {
         if (gameEnded) return;
 
+        // Comprobamos la derrota del jugador en todo momento
         if (playerHealth.GetCurrentHealth() <= 0f)
         {
             gameEnded = true;
             HandleDefeat();
         }
-        else if (bossHealth.GetCurrentHealth() <= 0f)
+        
+        // --- ¡LÓGICA MODIFICADA! ---
+        // ¡SOLO comprobamos la victoria si la pelea ha comenzado!
+        if (bossFightHasStarted && bossHealth.GetCurrentHealth() <= 0f)
         {
             gameEnded = true;
             HandleVictory();
         }
+        // --- FIN DE LÓGICA MODIFICADA ---
     }
+
+    // --- ¡NUEVO MÉTODO! ---
+    // Esta función será llamada por tu 'BossTrigger' para iniciar la pelea.
+    public void StartBossFight()
+    {
+        Debug.Log("GameManager: ¡La pelea contra el jefe ha comenzado!");
+        bossFightHasStarted = true;
+    }
+    // --- FIN DE MÉTODO NUEVO ---
 
     private void HandleDefeat()
     {

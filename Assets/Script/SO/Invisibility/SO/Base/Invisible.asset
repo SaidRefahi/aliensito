@@ -22,5 +22,6 @@ MonoBehaviour:
   cooldown: 4
   duration: 3
   invisibilityAlpha: 1
-  invisibilityColor: {r: 0.8207547, g: 0.3213332, b: 0.64448833, a: 0.043137256}
+  invisibilityColor: {r: 1, g: 1, b: 1, a: 0}
+  transparentMaterial: {fileID: 2100000, guid: a96bc004703ad934193900f3c188c793, type: 2}
   changeLayer: 1

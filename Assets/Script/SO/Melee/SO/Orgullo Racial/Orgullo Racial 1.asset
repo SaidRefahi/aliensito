@@ -12,18 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8cc634458bda26f4190c6a40cacd52db, type: 3}
   m_Name: Orgullo Racial 1
   m_EditorClassIdentifier: Assembly-CSharp::MeleeOrgulloRacialSO
-  abilityName: Orgullo Racial
+  abilityName: Orgullo Racial +1
   icon: {fileID: 21300000, guid: d54a9728519c5d54bbe09aff5bd95284, type: 3}
-  description: Potencia tus golpes al maximo
+  description: "Potencia la distancia y el da\xF1o de tus golpes al maximo"
   slot: 0
   maxUses: 16
   nextLevelAbility: {fileID: 11400000, guid: 559e9d68cdf880e429ea8d63b9040720, type: 2}
   baseAbility: {fileID: 11400000, guid: 386e81896203da348b28fb683bc75c6e, type: 2}
+  cooldown: 0.5
   damage: 18
   range: 2.3
-  targetLayers:
-    serializedVersion: 2
-    m_Bits: 128
   criticalDamageMultiplier: 2
   attackCooldown: 0.5
   enableCombos: 1

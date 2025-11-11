@@ -12,18 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b7fe2682953782645a4ca53ae36b74e7, type: 3}
   m_Name: Musculatura Bestial 2
   m_EditorClassIdentifier: Assembly-CSharp::MeleeMusculaturaBestialSO
-  abilityName: Musculatura Bestial
+  abilityName: Musculatura Bestial +2
   icon: {fileID: 21300000, guid: 7dfd68325eeac354d866d207e4d2744c, type: 3}
   description: Aturde con tus golpes
   slot: 0
   maxUses: 18
   nextLevelAbility: {fileID: 0}
   baseAbility: {fileID: 11400000, guid: 31db4cd3455c3f647b89e2821d1a19a9, type: 2}
+  cooldown: 0.5
   damage: 18
   range: 2
-  targetLayers:
-    serializedVersion: 2
-    m_Bits: 128
   criticalDamageMultiplier: 2
   attackCooldown: 0.5
   enableCombos: 1

@@ -152,7 +152,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6a2674e27a244d94ba3ffa69ee5a33e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Projectile
-  poolTag: 
+  poolTag: ProjectilePoison2
   isCritical: 0
   criticalDamageMultiplier: 2
   damage: 10
@@ -161,7 +161,7 @@ MonoBehaviour:
     m_Bits: 128
   obstacleLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 2056
   lifetime: 5
   applyPoison: 1
   poisonDamagePerSecond: 4

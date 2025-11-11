@@ -12,18 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 666a6b702c5ac4f499471f689ab5ff37, type: 3}
   m_Name: Toque Nocivo 1
   m_EditorClassIdentifier: Assembly-CSharp::MeleeToqueNocivoSO
-  abilityName: Toque Nocivo
+  abilityName: Toque Nocivo +1
   icon: {fileID: 21300000, guid: 6f649aea2852e3b46a8c4386355a2c53, type: 3}
-  description: Envena su carne
+  description: Envena con cada golpe
   slot: 0
   maxUses: 12
   nextLevelAbility: {fileID: 11400000, guid: 4b9dad9f2b359dc47be1b050d2398715, type: 2}
   baseAbility: {fileID: 11400000, guid: 117984fd080a9d543b3a0265f262e5f3, type: 2}
+  cooldown: 0.5
   damage: 13
   range: 2
-  targetLayers:
-    serializedVersion: 2
-    m_Bits: 128
   criticalDamageMultiplier: 2
   attackCooldown: 0.5
   enableCombos: 1

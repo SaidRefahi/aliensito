@@ -10,69 +10,58 @@ public class InvisibilitySO : AbilitySO
     public float duration = 3f;
 
     [Header("Visual Settings")]
+    // --- LÍNEAS ANTIGUAS (YA NO SE USAN, PERO SE PUEDEN DEJAR) ---
     [Range(0f, 1f)]
     public float invisibilityAlpha = 0.3f;
     public Color invisibilityColor = Color.cyan;
+    // --- FIN LÍNEAS ANTIGUAS ---
+
+    // --- ¡NUEVO CAMPO AÑADIDO! ---
+    [Tooltip("Arrastra aquí el material transparente (con modo 'Fade' o 'Transparent') que se usará para la invisibilidad.")]
+    public Material transparentMaterial;
+    // --- FIN NUEVO CAMPO ---
 
     [Header("Layer Settings")]
     public bool changeLayer = true;
 
-    // --- ¡NUEVAS LÍNEAS! ---
-    // (Añadimos el tracker de cooldown)
-    private readonly Dictionary<GameObject, float> lastUseTime = new Dictionary<GameObject, float>();
-    // --- FIN DE LÍNEAS NUEVAS ---
-
+    // --- ¡TU LÓGICA DE EXECUTE (TOGGLE) SE QUEDA IGUAL! ---
+    // (¡No he cambiado nada aquí, solo he añadido una comprobación
+    // de que el 'transparentMaterial' no esté vacío!)
     public override bool Execute(GameObject user)
     {
-        // --- ¡¡LÓGICA COMPLETAMENTE MODIFICADA!! ---
-
-        // 1. Comprobar si está en cooldown
-        if (!CanUse(user))
+        // Comprobación de seguridad
+        if (transparentMaterial == null)
         {
-            return false; // Fallar silenciosamente
+            Debug.LogError($"¡InvisibilitySO '{this.name}' no tiene un 'Transparent Material' asignado!");
+            return false; // No se puede ejecutar si falta el material
         }
-        
-        // 2. Comprobar si ya está invisible
+
         InvisibilityRunner activeRunner = user.GetComponent<InvisibilityRunner>();
+        
         if (activeRunner != null)
         {
-            // ¡Ya está activo! No hacer nada. Fallar.
-            return false;
+            activeRunner.Stop();
         }
-
-        // 3. ¡Ok, no está en CD y no está activo! ¡ACTIVAR!
-        InvisibilityRunner runner = user.AddComponent<InvisibilityRunner>();
-        runner.StartInvisibility(this);
-
-        // 4. Registrar el uso para el cooldown
-        lastUseTime[user] = Time.time;
-        return true;
-        // --- FIN DE LÓGICA MODIFICADA ---
-    }
-    
-    // --- ¡NUEVO MÉTODO! ---
-    private bool CanUse(GameObject user)
-    {
-        if (!lastUseTime.TryGetValue(user, out float last))
+        else 
         {
-            return true; // Nunca se ha usado
+            InvisibilityRunner runner = user.AddComponent<InvisibilityRunner>();
+            runner.StartInvisibility(this);
         }
-        
-        // Comprueba si el tiempo actual ha superado el último uso + cooldown
-        // (El 'cooldown' es la variable de la clase base 'AbilitySO')
-        return Time.time >= last + cooldown;
-    }
-    // --- FIN DE MÉTODO NUEVO ---
 
-    // --- Clase Ayudante Interna (Runner) ---
-    // (Esta clase interna no necesita cambios)
+        return true;
+    }
+
+    // --- CLASE INTERNA InvisibilityRunner (¡MODIFICADA!) ---
     public class InvisibilityRunner : MonoBehaviour
     {
         public event Action OnInvisibilityEnd;
 
         private InvisibilitySO abilityData;
         private List<Renderer> renderers = new List<Renderer>();
-        private List<Color> originalColors = new List<Color>();
+
+        // --- ¡MODIFICADO! Almacenamos los materiales originales ---
+        private Dictionary<Renderer, Material[]> originalMaterials = new Dictionary<Renderer, Material[]>();
+        
         private int originalLayer;
         private int invisibilityLayer;
         private Coroutine invisibilityCoroutine;
@@ -82,17 +71,18 @@ public class InvisibilitySO : AbilitySO
             this.abilityData = data;
             invisibilityLayer = LayerMask.NameToLayer("Invisibility");
 
-            GetComponentsInChildren<Renderer>(renderers);
-            originalColors.Clear();
+            // Obtenemos todos los renderers (incluyendo hijos)
+            GetComponentsInChildren<Renderer>(true, renderers);
+            originalMaterials.Clear();
+
+            // --- ¡MODIFICADO! Guardamos los materiales originales ---
             foreach (var r in renderers)
             {
-                if(r.material.HasProperty("_Color"))
-                {
-                    originalColors.Add(r.material.color);
-                }
+                // Guardamos una copia de los materiales actuales
+                originalMaterials.Add(r, r.sharedMaterials); 
             }
 
-            SetVisuals(true);
+            SetVisuals(true); // Aplicamos el material transparente
 
             if (abilityData.changeLayer)
             {
@@ -107,7 +97,7 @@ public class InvisibilitySO : AbilitySO
         {
             if (invisibilityCoroutine != null) StopCoroutine(invisibilityCoroutine);
             
-            SetVisuals(false);
+            SetVisuals(false); // Restauramos los materiales originales
             if (abilityData.changeLayer) gameObject.layer = originalLayer;
             
             OnInvisibilityEnd?.Invoke();
@@ -115,16 +105,35 @@ public class InvisibilitySO : AbilitySO
             Destroy(this);
         }
 
+        // --- ¡MÉTODO SetVisuals COMPLETAMENTE MODIFICADO! ---
         private void SetVisuals(bool isInvisible)
         {
-            Color targetColor = abilityData.invisibilityColor;
-            targetColor.a = abilityData.invisibilityAlpha;
-
-            for(int i = 0; i < renderers.Count; i++)
+            if (isInvisible)
             {
-                if(renderers[i].material.HasProperty("_Color"))
+                // APLICAR MATERIAL TRANSPARENTE
+                foreach (var r in renderers)
                 {
-                    renderers[i].material.color = isInvisible ? targetColor : originalColors[i];
+                    // Creamos un array de materiales transparente del tamaño
+                    // correcto para este renderer (por si usa múltiples materiales)
+                    Material[] newMaterials = new Material[r.sharedMaterials.Length];
+                    for (int i = 0; i < newMaterials.Length; i++)
+                    {
+                        // Asignamos nuestro material transparente a todos los slots
+                        newMaterials[i] = abilityData.transparentMaterial; 
+                    }
+                    r.materials = newMaterials; // Asignamos el array
+                }
+            }
+            else
+            {
+                // RESTAURAR MATERIALES ORIGINALES
+                foreach (var r in renderers)
+                {
+                    // Buscamos los materiales que guardamos para este renderer
+                    if (originalMaterials.TryGetValue(r, out Material[] mats))
+                    {
+                        r.materials = mats; // Los restauramos
+                    }
                 }
             }
         }

@@ -6,10 +6,18 @@ public class ParpadeoSO : InvisibilitySO
     [Header("Configuración de Parpadeo")]
     public float blinkDistance = 10f;
 
-    // --- ¡NUEVA LÍNEA! ---
     [Tooltip("Define qué capas bloquearán el parpadeo (ej. 'wallfall')")]
     public LayerMask wallLayer; 
-    // --- FIN DE LÍNEA NUEVA ---
+
+    // --- ¡NUEVAS LÍNEAS! ---
+    [Header("Configuración de VFX")]
+    [Tooltip("Tag del PoolManager para el VFX al *desaparecer* (posición inicial)")]
+    public string startVfxPoolTag = "BlinkStartVFX"; // <-- Escribe el Tag de tu Pool
+    
+    [Tooltip("Tag del PoolManager para el VFX al *reaparecer* (posición final)")]
+    public string endVfxPoolTag = "BlinkEndVFX"; // <-- Escribe el Tag de tu Pool
+    // --- FIN DE LÍNEAS NUEVAS ---
+
 
     public override bool Execute(GameObject user)
     {
@@ -29,49 +37,83 @@ public class ParpadeoSO : InvisibilitySO
             return true;
         }
 
-        // 4. Calculamos la dirección y las posiciones
+        // 4. Calculamos la posición de inicio
         Vector3 startPosition = rb.position; // Posición actual
+
+        // --- ¡NUEVA LÍNEA! ---
+        // 5. Disparamos el VFX de *inicio* en la posición actual
+        SpawnVFX(startVfxPoolTag, startPosition, user.transform.rotation);
+        // --- FIN DE LÍNEA NUEVA ---
+
+        // 6. Calculamos la dirección y la posición de destino
         Vector3 forwardDirection = user.transform.forward;
         forwardDirection.y = 0; // Previene parpadeo vertical
         Vector3 blinkVector = forwardDirection.normalized * blinkDistance;
         Vector3 endPosition = startPosition + blinkVector; // Posición de destino
 
-        // --- ¡¡LÓGICA CORREGIDA AQUÍ!! ---
-        // 5. Comprobamos si hay una pared en el camino
-        // Lanzamos un rayo desde el inicio hasta el fin,
-        // buscando SÓLO en la 'wallLayer'
+        // 7. Comprobamos si hay una pared en el camino
         if (Physics.Linecast(startPosition, endPosition, wallLayer))
         {
             // ¡Hay una pared! El parpadeo se bloquea.
-            // Devolvemos 'true' porque la habilidad (invisibilidad) SÍ se ejecutó,
-            // pero el movimiento fue bloqueado, lo cual es la lógica correcta.
             Debug.Log("¡Parpadeo bloqueado por una pared!");
+            // (Devolvemos true porque la invisibilidad SÍ se activó)
             return true;
         }
-        // --- FIN DE LÓGICA CORREGIDA ---
 
-        // 6. ¡Camino libre! Usamos MovePosition para teletransportar el Rigidbody.
+        // 8. ¡Camino libre! Usamos MovePosition para teletransportar el Rigidbody.
         rb.MovePosition(endPosition);
+
+        // --- ¡NUEVA LÍNEA! ---
+        // 9. Disparamos el VFX de *llegada* en la nueva posición
+        SpawnVFX(endVfxPoolTag, endPosition, user.transform.rotation);
+        // --- FIN DE LÍNEA NUEVA ---
         
-        // 7. Devolvemos 'true'
+        // 10. Devolvemos 'true'
         return true;
     }
 
     // Método de fallback si no se encuentra un Rigidbody
     private void PerformLegacyBlink(Transform userTransform)
     {
-        // (Este método de fallback también debería tener la comprobación del Linecast)
+        // Calculamos posiciones
         Vector3 startPosition = userTransform.position;
         Vector3 forwardDirection = userTransform.forward;
         forwardDirection.y = 0;
         Vector3 blinkVector = forwardDirection.normalized * blinkDistance;
         Vector3 endPosition = startPosition + blinkVector;
 
+        // --- ¡NUEVA LÍNEA! ---
+        // Disparamos VFX de inicio
+        SpawnVFX(startVfxPoolTag, startPosition, userTransform.rotation);
+        // --- FIN DE LÍNEA NUEVA ---
+
+        // Comprobamos pared
         if (Physics.Linecast(startPosition, endPosition, wallLayer))
         {
             return; // Bloqueado
         }
         
+        // Teletransporte
         userTransform.position = endPosition;
+        
+        // --- ¡NUEVA LÍNEA! ---
+        // Disparamos VFX de llegada
+        SpawnVFX(endVfxPoolTag, endPosition, userTransform.rotation);
+        // --- FIN DE LÍNEA NUEVA ---
     }
+
+    // --- ¡NUEVO MÉTODO AYUDANTE! ---
+    /// <summary>
+    /// Método limpio (principio KISS) para spawnear VFX desde el PoolManager.
+    /// </summary>
+    private void SpawnVFX(string poolTag, Vector3 position, Quaternion rotation)
+    {
+        // Comprobamos si el PoolManager existe y el tag no está vacío
+        if (PoolManager.Instance != null && !string.IsNullOrEmpty(poolTag))
+        {
+            // Usamos la rotación del jugador para alinear el VFX si es necesario
+            PoolManager.Instance.SpawnFromPool(poolTag, position, rotation);
+        }
+    }
+    // --- FIN DE MÉTODO NUEVO ---
 }

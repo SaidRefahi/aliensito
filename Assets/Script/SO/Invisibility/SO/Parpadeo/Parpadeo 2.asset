@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ParpadeoSO
   abilityName: Parpadeo
   icon: {fileID: 21300000, guid: 2251011a5d10c124ea35f86c11f5d53b, type: 3}
-  description: Materializate a una distancia segura
+  description: Teletransportate a una distancia segura
   slot: 2
   maxUses: 10
   nextLevelAbility: {fileID: 0}
@@ -23,6 +23,7 @@ MonoBehaviour:
   duration: 5
   invisibilityAlpha: 0.3
   invisibilityColor: {r: 0, g: 1, b: 1, a: 1}
+  transparentMaterial: {fileID: 2100000, guid: a96bc004703ad934193900f3c188c793, type: 2}
   changeLayer: 1
   blinkDistance: 6
   wallLayer:
