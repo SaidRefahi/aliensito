@@ -24,4 +24,4 @@ MonoBehaviour:
   projectileSpeed: 25
   projectilePoolTag: Projectile_Basic
   projectileCount: 2
-  spreadAngle: 60
+  spreadAngle: 30
