@@ -32,7 +32,22 @@ namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
         private void Awake()
         {
             enemyRenderer = GetComponent<Renderer>();
-            originalColor = enemyRenderer.material.color;
+            if (enemyRenderer == null)
+            {
+                enemyRenderer = GetComponentInChildren<Renderer>();
+            }
+
+            if (enemyRenderer != null && enemyRenderer.material != null)
+            {
+                if (enemyRenderer.material.HasProperty("_BaseColor"))
+                {
+                    originalColor = enemyRenderer.material.GetColor("_BaseColor");
+                }
+                else if (enemyRenderer.material.HasProperty("_Color"))
+                {
+                    originalColor = enemyRenderer.material.color;
+                }
+            }
         }
 
         private void OnDestroy()
@@ -69,10 +84,23 @@ namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
             activeScaleTween = transform.DOPunchScale(punchScale, effectDuration, 10, 1f)
                 .SetLink(gameObject);
 
-            activeColorTween = enemyRenderer.material.DOColor(hitColor, effectDuration * 0.5f)
-                .SetLoops(2, LoopType.Yoyo)
-                .SetLink(gameObject)
-                .OnComplete(() => enemyRenderer.material.color = originalColor);
+            if (enemyRenderer != null && enemyRenderer.material != null)
+            {
+                if (enemyRenderer.material.HasProperty("_BaseColor"))
+                {
+                    activeColorTween = enemyRenderer.material.DOColor(hitColor, "_BaseColor", effectDuration * 0.5f)
+                        .SetLoops(2, LoopType.Yoyo)
+                        .SetLink(gameObject)
+                        .OnComplete(() => enemyRenderer.material.SetColor("_BaseColor", originalColor));
+                }
+                else if (enemyRenderer.material.HasProperty("_Color"))
+                {
+                    activeColorTween = enemyRenderer.material.DOColor(hitColor, effectDuration * 0.5f)
+                        .SetLoops(2, LoopType.Yoyo)
+                        .SetLink(gameObject)
+                        .OnComplete(() => enemyRenderer.material.color = originalColor);
+                }
+            }
         }
     }
 }

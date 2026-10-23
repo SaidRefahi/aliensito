@@ -99,15 +99,18 @@ namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
         private void OnTriggerEnter(Collider other)
         {
             int otherLayer = 1 << other.gameObject.layer;
+            int rootLayer = (other.transform.root != null) ? (1 << other.transform.root.gameObject.layer) : otherLayer;
 
-            if ((damageableLayers.value & otherLayer) != 0)
+            if ((damageableLayers.value & otherLayer) != 0 || (damageableLayers.value & rootLayer) != 0)
             {
-                if (other.TryGetComponent<Health>(out Health health))
+                if (other.TryGetComponent<Health>(out Health health) ||
+                    (other.transform.root != null && other.transform.root.TryGetComponent(out health)))
                 {
                     float finalDamage = isCritical ? damage * criticalDamageMultiplier : damage;
                     health.TakeDamage(finalDamage);
 
-                    if (other.TryGetComponent<StatusEffectManager>(out var effectManager))
+                    if (other.TryGetComponent<StatusEffectManager>(out var effectManager) ||
+                        (other.transform.root != null && other.transform.root.TryGetComponent(out effectManager)))
                     {
                         ApplyStatusEffects(effectManager, other.gameObject);
                     }

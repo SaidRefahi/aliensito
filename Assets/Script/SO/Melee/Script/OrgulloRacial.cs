@@ -16,7 +16,8 @@ namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
                 var hit = MeleeHitBuffer[i];
                 if (hit == null || hit.gameObject == user) continue;
 
-                if (hit.TryGetComponent<Health>(out Health health))
+                if (hit.TryGetComponent<Health>(out Health health) ||
+                    (hit.transform.root != null && hit.transform.root.TryGetComponent(out health)))
                 {
                     health.TakeDamage(finalDamage);
                 }

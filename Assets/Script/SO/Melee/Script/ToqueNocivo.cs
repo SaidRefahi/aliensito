@@ -24,10 +24,12 @@ namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
                 var hit = MeleeHitBuffer[i];
                 if (hit == null || hit.gameObject == user) continue;
 
-                if (hit.TryGetComponent<Health>(out Health health))
+                if (hit.TryGetComponent<Health>(out Health health) ||
+                    (hit.transform.root != null && hit.transform.root.TryGetComponent(out health)))
                 {
                     health.TakeDamage(finalDamage);
-                    if (hit.TryGetComponent<StatusEffectManager>(out var effectManager))
+                    if (hit.TryGetComponent<StatusEffectManager>(out var effectManager) ||
+                        (hit.transform.root != null && hit.transform.root.TryGetComponent(out effectManager)))
                     {
                         effectManager.ApplyEffect(new Poison(hit.gameObject, poisonDuration, poisonDamagePerSecond));
                     }

@@ -34,7 +34,8 @@ namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
                 finalDamage *= criticalMultiplier;
             }
 
-            if (target.TryGetComponent<Health>(out var health))
+            if (target.TryGetComponent<Health>(out var health) ||
+                (target.transform.root != null && target.transform.root.TryGetComponent(out health)))
             {
                 health.TakeDamage(finalDamage);
             }
