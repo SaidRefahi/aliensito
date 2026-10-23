@@ -1,44 +1,43 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.EventSystems; 
+using UnityEngine.EventSystems;
+using TriInspector;
 
-
-public class SceneNavigationManager : MonoBehaviour
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    [Header("Configuración de Escena")]
-    [Tooltip("El índice de la escena del juego (ej. 3)")]
-    [SerializeField] private int gameSceneIndex = 3;
-    
-    [Tooltip("El índice de la escena del menú principal (ej. 0)")]
-    [SerializeField] private int mainMenuSceneIndex = 0;
-
-    [Header("Navegación de UI")]
-    [Tooltip("El primer botón que debe seleccionarse (ej. 'Reiniciar' o 'Menú')")]
-    [SerializeField] private GameObject firstSelectedButton;
-
-    private void Start()
+    public class SceneNavigationManager : MonoBehaviour
     {
-   
-        Time.timeScale = 1f;
+        [Title("Scene Configuration")]
+        [SerializeField] private int gameSceneIndex = 3;
+        [SerializeField] private int mainMenuSceneIndex = 0;
 
-     
-        
-        EventSystem.current.SetSelectedGameObject(null); // Limpia selección
-        EventSystem.current.SetSelectedGameObject(firstSelectedButton);
-    }
+        [Title("UI Navigation")]
+        [SerializeField] private GameObject firstSelectedButton;
 
-   
-    public void RestartGame()
-    {
-        
-        SceneManager.LoadScene(gameSceneIndex);
-    }
+        private void Start()
+        {
+            Time.timeScale = 1f;
 
- 
-    public void GoToMainMenu()
-    {
-        // El MenuSystem.Start() de la escena principal se encargará
-        // de seleccionar su propio botón "Jugar".
-        SceneManager.LoadScene(mainMenuSceneIndex);
+            if (EventSystem.current != null)
+            {
+                EventSystem.current.SetSelectedGameObject(null);
+                if (firstSelectedButton != null)
+                {
+                    EventSystem.current.SetSelectedGameObject(firstSelectedButton);
+                }
+            }
+        }
+
+        public void RestartGame()
+        {
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(gameSceneIndex);
+        }
+
+        public void GoToMainMenu()
+        {
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(mainMenuSceneIndex);
+        }
     }
 }

@@ -1,39 +1,36 @@
 using UnityEngine;
 using UnityEngine.AI;
 
-public class Stun : StatusEffect
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    private readonly NavMeshAgent agent;
-
-    public Stun(GameObject target, float duration) : base(target, duration)
+    public class Stun : StatusEffect
     {
-        // Guardamos la referencia al NavMeshAgent en el constructor.
-        this.agent = target.GetComponent<NavMeshAgent>();
-    }
+        private readonly NavMeshAgent agent;
 
-    // Se llama una vez cuando el efecto se aplica.
-    public override void OnApply()
-    {
-        if (agent != null)
+        public Stun(GameObject target, float duration) : base(target, duration)
         {
-            Debug.Log($"<color=yellow>{targetObject.name} is STUNNED for {Duration}s.</color>");
-            agent.isStopped = true; // Detenemos al enemigo.
+            agent = target != null ? target.GetComponent<NavMeshAgent>() : null;
         }
-    }
 
-    // Se llama cada frame, pero para el stun no necesitamos hacer nada aquí.
-    public override void Tick(float deltaTime)
-    {
-        base.Tick(deltaTime); // Solo restamos el tiempo.
-    }
-
-    // Se llama una vez cuando el efecto termina.
-    public override void OnEnd()
-    {
-        if (agent != null)
+        public override void OnApply()
         {
-            Debug.Log($"<color=grey>Stun on {targetObject.name} has worn off.</color>");
-            agent.isStopped = false; // Reanudamos el movimiento del enemigo.
+            if (agent != null && agent.isOnNavMesh)
+            {
+                agent.isStopped = true;
+            }
+        }
+
+        public override void Tick(float deltaTime)
+        {
+            base.Tick(deltaTime);
+        }
+
+        public override void OnEnd()
+        {
+            if (agent != null && agent.isOnNavMesh)
+            {
+                agent.isStopped = false;
+            }
         }
     }
 }

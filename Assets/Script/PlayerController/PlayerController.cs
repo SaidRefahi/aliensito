@@ -1,57 +1,78 @@
-// Ruta: Assets/Scripts/PlayerController/PlayerController.cs
 using UnityEngine;
 using UnityEngine.InputSystem;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
 
-// Este script ahora requiere los componentes que va a controlar
-[RequireComponent(typeof(PlayerMovement))]
-[RequireComponent(typeof(PlayerAbilityHandler))]
-[RequireComponent(typeof(StatusEffectManager))] // Lo mantenemos aquí
-public class PlayerController : MonoBehaviour
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    // Referencias a los componentes que controlará
-    private PlayerMovement playerMovement;
-    private PlayerAbilityHandler playerAbilityHandler;
-
-    // El PlayerInput (componente) llamará a estos métodos.
-    // Ya no necesitamos guardar el Animator ni las habilidades aquí.
-
-    private void Awake()
+    [RequireComponent(typeof(PlayerMovement))]
+    [RequireComponent(typeof(PlayerAbilityHandler))]
+    public class PlayerController : MonoBehaviour
     {
-        // Obtenemos las referencias a nuestros "trabajadores"
-        playerMovement = GetComponent<PlayerMovement>();
-        playerAbilityHandler = GetComponent<PlayerAbilityHandler>();
-    }
+        private PlayerMovement playerMovement;
+        private PlayerAbilityHandler playerAbilityHandler;
+        private InputSystem_Actions inputActions;
 
-    // --- MÉTODOS DE INPUT (DELEGACIÓN) ---
+        private void Awake()
+        {
+            playerMovement = GetComponent<PlayerMovement>();
+            playerAbilityHandler = GetComponent<PlayerAbilityHandler>();
+            inputActions = new InputSystem_Actions();
+        }
 
-    public void OnMove(InputValue value)
-    {
-        playerMovement.SetMoveInput(value.Get<Vector2>());
-    }
-    
-    public void OnMeleeAttack(InputValue value)
-    {
-        if (value.isPressed)
+        private void OnEnable()
+        {
+            inputActions.Player.Move.performed += HandleMovePerformed;
+            inputActions.Player.Move.canceled += HandleMoveCanceled;
+            inputActions.Player.MeleeAttack.performed += HandleMeleePerformed;
+            inputActions.Player.RangedAttack.performed += HandleRangedPerformed;
+            inputActions.Player.Invisibility.performed += HandleInvisibilityPerformed;
+            inputActions.Player.Enable();
+        }
+
+        private void OnDisable()
+        {
+            inputActions.Player.Move.performed -= HandleMovePerformed;
+            inputActions.Player.Move.canceled -= HandleMoveCanceled;
+            inputActions.Player.MeleeAttack.performed -= HandleMeleePerformed;
+            inputActions.Player.RangedAttack.performed -= HandleRangedPerformed;
+            inputActions.Player.Invisibility.performed -= HandleInvisibilityPerformed;
+            inputActions.Player.Disable();
+        }
+
+        private void OnDestroy()
+        {
+            inputActions?.Dispose();
+        }
+
+        private void HandleMovePerformed(InputAction.CallbackContext context)
+        {
+            playerMovement.SetMoveInput(context.ReadValue<Vector2>());
+        }
+
+        private void HandleMoveCanceled(InputAction.CallbackContext context)
+        {
+            playerMovement.SetMoveInput(Vector2.zero);
+        }
+
+        private void HandleMeleePerformed(InputAction.CallbackContext context)
         {
             playerAbilityHandler.UseMeleeAbility();
         }
-    }
 
-    public void OnRangedAttack(InputValue value)
-    {
-        if (value.isPressed)
+        private void HandleRangedPerformed(InputAction.CallbackContext context)
         {
             playerAbilityHandler.UseRangedAbility();
         }
-    }
 
-    public void OnInvisibility(InputValue value)
-    {
-        if (value.isPressed)
+        private void HandleInvisibilityPerformed(InputAction.CallbackContext context)
         {
             playerAbilityHandler.UseInvisibilityAbility();
         }
-    }
 
-   
+        // Backward compatibility for legacy PlayerInput SendMessage invocations
+        public void OnMove(InputValue value) => playerMovement.SetMoveInput(value.Get<Vector2>());
+        public void OnMeleeAttack(InputValue value) { if (value.isPressed) playerAbilityHandler.UseMeleeAbility(); }
+        public void OnRangedAttack(InputValue value) { if (value.isPressed) playerAbilityHandler.UseRangedAbility(); }
+        public void OnInvisibility(InputValue value) { if (value.isPressed) playerAbilityHandler.UseInvisibilityAbility(); }
+    }
 }

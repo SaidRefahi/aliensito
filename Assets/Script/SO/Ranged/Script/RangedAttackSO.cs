@@ -1,80 +1,83 @@
+using System.Collections.Generic;
 using UnityEngine;
-using System.Collections.Generic; // ¡Necesario para el Diccionario!
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using TriInspector;
 
-[CreateAssetMenu(fileName = "Disparo Básico", menuName = "Habilidades/Ataque a Distancia/Disparo Básico")]
-public class RangedAttackSO : AbilitySO, IAimable
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    [Header("Configuración de Ataque a Distancia")]
-    public GameObject projectilePrefab;
-    public float projectileSpeed = 25f;
-    [Tooltip("Debe coincidir con el tag en el PoolManager")]
-    public string projectilePoolTag; 
-
-    // --- ¡LÍNEA ELIMINADA! ---
-    // [Header("Configuración de Cooldown")]
-    // public float cooldown = 0.5f; <-- ¡ESTA LÍNEA SE HA BORRADO!
-    // (Ahora la hereda de AbilitySO)
-    // ----------------------------
-    
-    // (Usamos un Diccionario para gestionar el CD por cada usuario (jugador, jefe, etc.))
-    private readonly Dictionary<GameObject, float> lastUseTime = new Dictionary<GameObject, float>();
-
-    public Transform aimSource { get; set; }
-    
-    public override bool Execute(GameObject user)
+    [CreateAssetMenu(fileName = "Disparo Básico", menuName = "Habilidades/Ataque a Distancia/Disparo Básico")]
+    public class RangedAttackSO : AbilitySO, IAimable
     {
-        if (!CanUse(user)) return false; // Comprueba si está en cooldown
+        [Title("Ranged Attack Settings")]
+        [SerializeField] private GameObject projectilePrefab;
+        [SerializeField] private float projectileSpeed = 25f;
+        [SerializeField] private string projectilePoolTag;
 
-        if (projectilePrefab == null || string.IsNullOrEmpty(projectilePoolTag))
-        {
-            Debug.LogError($"¡RangedAttackSO '{this.name}' no tiene Prefab o Pool Tag asignado!");
-            return false;
-        }
-        
-        TargetingProfile targeting = user.GetComponent<TargetingProfile>();
-        if (targeting == null)
-        {
-            Debug.LogError($"¡El tirador {user.name} no tiene un componente TargetingProfile!");
-            return false;
-        }
-        
-        var effectManager = user.GetComponent<StatusEffectManager>();
-        var criticalBuff = effectManager?.FindEffect(typeof(CriticalBuff));
-        bool isCritical = criticalBuff != null;
-        if (isCritical) effectManager.RemoveEffect(criticalBuff);
+        public GameObject ProjectilePrefab => projectilePrefab;
+        public float ProjectileSpeed => projectileSpeed;
+        public string ProjectilePoolTag => projectilePoolTag;
 
-        Transform spawnPoint = (aimSource != null) ? aimSource : user.transform;
-        
-        GameObject projGO = PoolManager.Instance.SpawnFromPool(projectilePoolTag, spawnPoint.position, spawnPoint.rotation);
-        if(projGO == null) return false;
-        
-        if (projGO.TryGetComponent<Projectile>(out Projectile projectile))
+        private readonly Dictionary<GameObject, float> lastUseTime = new Dictionary<GameObject, float>();
+        private Transform aimSource;
+
+        public Transform AimSource => aimSource;
+
+        public void SetAimSource(Transform source)
         {
-            projectile.isCritical = isCritical;
-            projectile.poolTag = projectilePoolTag;
-            projectile.damageableLayers = targeting.DamageableLayers;
+            aimSource = source;
         }
 
-        if (projGO.TryGetComponent<Rigidbody>(out Rigidbody rb))
+        public override bool Execute(GameObject user)
         {
-            rb.linearVelocity = Vector3.zero; 
-            rb.angularVelocity = Vector3.zero;
-            rb.linearVelocity = spawnPoint.forward * projectileSpeed;
-        }
+            if (!CanUse(user)) return false;
 
-        lastUseTime[user] = Time.time; // ¡Registra el uso!
-        return true; 
-    }
-    
-    private bool CanUse(GameObject user)
-    {
-        if (!lastUseTime.TryGetValue(user, out float last))
-        {
+            if (projectilePrefab == null || string.IsNullOrEmpty(projectilePoolTag))
+            {
+                Debug.LogError($"[RangedAttackSO] '{name}' has no Prefab or Pool Tag assigned!", this);
+                return false;
+            }
+
+            TargetingProfile targeting = user.GetComponent<TargetingProfile>();
+            if (targeting == null)
+            {
+                Debug.LogError($"[RangedAttackSO] Shooter {user.name} does not have a TargetingProfile!", user);
+                return false;
+            }
+
+            var effectManager = user.GetComponent<StatusEffectManager>();
+            var criticalBuff = effectManager != null ? effectManager.FindEffect(typeof(CriticalBuff)) : null;
+            bool isCritical = criticalBuff != null;
+            if (isCritical) effectManager.RemoveEffect(criticalBuff);
+
+            Transform spawnPoint = (aimSource != null) ? aimSource : user.transform;
+
+            GameObject projGO = PoolManager.Instance.SpawnFromPool(projectilePoolTag, spawnPoint.position, spawnPoint.rotation);
+            if (projGO == null) return false;
+
+            if (projGO.TryGetComponent<Projectile>(out Projectile projectile))
+            {
+                projectile.SetCritical(isCritical);
+                projectile.SetDamageableLayers(targeting.DamageableLayers);
+            }
+
+            if (projGO.TryGetComponent<Rigidbody>(out Rigidbody rb))
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.linearVelocity = spawnPoint.forward * projectileSpeed;
+            }
+
+            lastUseTime[user] = Time.time;
             return true;
         }
-        
-        // ¡Esta línea funciona!
-        // Lee el 'cooldown' heredado de la clase base AbilitySO
-        return Time.time >= last + cooldown;
+
+        protected bool CanUse(GameObject user)
+        {
+            if (!lastUseTime.TryGetValue(user, out float last))
+            {
+                return true;
+            }
+            return Time.time >= last + Cooldown;
+        }
     }
 }

@@ -1,26 +1,46 @@
 using UnityEngine;
+using VContainer;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using TriInspector;
 
-/// <summary>
-/// Un script simple que le dice al AudioManager qué música
-/// debe sonar al iniciar esta escena.
-/// </summary>
-public class SceneMusicPlayer : MonoBehaviour
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    [Header("Configuración de Música")]
-    [Tooltip("El nombre EXACTO del track que pusiste en el AudioManager (ej. 'Level1_BGM')")]
-    public string musicName;
-
-    void Start()
+    public class SceneMusicPlayer : MonoBehaviour
     {
-        // Asegurarnos de que el AudioManager existe
-        if (AudioManager.Instance != null)
+        [Title("Audio Configuration")]
+        [Tooltip("Direct AudioCueSO reference (recommended for sound designers)")]
+        [SerializeField] private AudioCueSO musicCue;
+
+        [Tooltip("Legacy track name fallback")]
+        [SerializeField] private string musicName;
+
+        [Inject] private IAudioService audioService;
+
+        private void Awake()
         {
-            // ¡Simplemente le pedimos que ponga la música!
-            AudioManager.Instance.PlayMusic(musicName);
+            if (audioService == null)
+            {
+                audioService = AudioManager.Instance;
+            }
         }
-        else
+
+        private void Start()
         {
-            Debug.LogWarning("¡SceneMusicPlayer no pudo encontrar el AudioManager!");
+            if (audioService != null)
+            {
+                if (musicCue != null)
+                {
+                    audioService.Play(musicCue);
+                }
+                else if (!string.IsNullOrEmpty(musicName))
+                {
+                    audioService.PlayMusic(musicName);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[SceneMusicPlayer] AudioService is not available in the scene.");
+            }
         }
     }
 }

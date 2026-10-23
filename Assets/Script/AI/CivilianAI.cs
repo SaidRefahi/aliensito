@@ -1,134 +1,184 @@
 using UnityEngine;
 using UnityEngine.AI;
+using Unity.Behavior;
 
-[RequireComponent(typeof(NavMeshAgent))]
-[RequireComponent(typeof(Animator))] // <--- AÑADIDO
-public class CivilianAI : MonoBehaviour
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    // --- MÁQUINA DE ESTADOS (FSM) ---
-    private enum AIState
+    [RequireComponent(typeof(NavMeshAgent))]
+    [RequireComponent(typeof(Animator))]
+    public class CivilianAI : MonoBehaviour
     {
-        Wandering,
-        Fleeing
-    }
-    private AIState currentState;
-    // ------------------------------------------
-
-    [Header("Configuración de Detección")]
-    [SerializeField] private float detectionRadius = 10f;
-    [SerializeField] private LayerMask playerLayer;
-
-    [Header("Configuración de Huida (Flee)")]
-    [SerializeField] private float fleeDistance = 20f;
-    [SerializeField] private float fleeSpeed = 5f;
-
-    [Header("Configuración de Paseo (Wander)")]
-    [SerializeField] private float wanderRadius = 15f;
-    [SerializeField] private float wanderTimerMax = 5f; // Tiempo entre paseos
-    
-    private NavMeshAgent agent;
-    private Transform playerTransform;
-    private float wanderTimer;
-    private float originalSpeed;
-    
-    // --- NUEVO: Variables de Animación ---
-    private Animator animator;
-    private readonly int moveSpeedHash = Animator.StringToHash("moveSpeed");
-    // -------------------------------------
-
-    private void Awake()
-    {
-        agent = GetComponent<NavMeshAgent>();
-        animator = GetComponent<Animator>(); // <--- NUEVO
-        originalSpeed = agent.speed;
-        
-        TransitionToWandering();
-    }
-
-    private void Update()
-    {
-        // --- NUEVO: Lógica de Animación ---
-        // Normaliza la velocidad actual (0 a 1) y la pasa al Animator.
-        // Si está huyendo, agent.speed será 'fleeSpeed', así que
-        // 'currentSpeed' seguirá siendo 1.0 (máxima velocidad).
-        float currentSpeed = agent.velocity.magnitude / agent.speed;
-        animator.SetFloat(moveSpeedHash, currentSpeed);
-        // ----------------------------------
-        
-        switch (currentState)
+        private enum AIState
         {
-            case AIState.Wandering:
-                CheckForPlayer();
-                Wander();
-                break;
-            case AIState.Fleeing:
-                CheckIfPlayerLost();
-                Flee();
-                break;
+            Wandering,
+            Fleeing
         }
-    }
+        private AIState currentState;
 
-    // --- LÓGICA DE ESTADOS (Asumo que esta lógica ya la tienes) ---
+        [Header("Detection Settings")]
+        [SerializeField] private float detectionRadius = 10f;
+        [SerializeField] private LayerMask playerLayer;
 
-    private void CheckForPlayer()
-    {
-        Collider[] colliders = Physics.OverlapSphere(transform.position, detectionRadius, playerLayer);
-        if (colliders.Length > 0)
+        [Header("Flee Settings")]
+        [SerializeField] private float fleeDistance = 20f;
+        [SerializeField] private float fleeSpeed = 5f;
+
+        [Header("Wander Settings")]
+        [SerializeField] private float wanderRadius = 15f;
+        [SerializeField] private float wanderTimerMax = 5f;
+
+        [Header("Unity Behavior Integration")]
+        [SerializeField] private BehaviorGraphAgent behaviorAgent;
+
+        private NavMeshAgent agent;
+        private Transform playerTransform;
+        private float wanderTimer;
+        private float originalSpeed;
+
+        private Animator animator;
+        private readonly int moveSpeedHash = Animator.StringToHash("moveSpeed");
+        private readonly Collider[] detectionColliders = new Collider[2];
+
+        private void Awake()
         {
-            playerTransform = colliders[0].transform;
-            TransitionToFleeing();
-        }
-    }
-    
-    private void CheckIfPlayerLost()
-    {
-        if (playerTransform == null || Vector3.Distance(transform.position, playerTransform.position) > detectionRadius * 1.5f)
-        {
-            playerTransform = null;
+            agent = GetComponent<NavMeshAgent>();
+            animator = GetComponent<Animator>();
+            originalSpeed = agent.speed;
+
+            if (behaviorAgent == null)
+            {
+                behaviorAgent = GetComponent<BehaviorGraphAgent>();
+            }
+
             TransitionToWandering();
         }
-    }
-    
-    private void TransitionToWandering()
-    {
-        currentState = AIState.Wandering;
-        agent.speed = originalSpeed; // Vuelve a la velocidad de paseo
-        wanderTimer = wanderTimerMax;
-    }
-    
-    private void TransitionToFleeing()
-    {
-        currentState = AIState.Fleeing;
-        agent.speed = fleeSpeed; // Aumenta la velocidad
-    }
-    
-    private void Wander()
-    {
-        wanderTimer -= Time.deltaTime;
-        if (wanderTimer <= 0f || !agent.hasPath || agent.remainingDistance < 0.5f)
+
+        private void Update()
         {
-            Vector3 randomDirection = Random.insideUnitSphere * wanderRadius;
-            randomDirection += transform.position;
-            if (NavMesh.SamplePosition(randomDirection, out NavMeshHit hit, wanderRadius, NavMesh.AllAreas))
+            if (agent.speed > 0.001f)
+            {
+                float currentSpeed = agent.velocity.magnitude / agent.speed;
+                animator.SetFloat(moveSpeedHash, currentSpeed);
+            }
+
+            if (behaviorAgent != null && behaviorAgent.Graph != null)
+            {
+                SyncBlackboardVariables();
+                return;
+            }
+
+            switch (currentState)
+            {
+                case AIState.Wandering:
+                    CheckForPlayer();
+                    Wander();
+                    break;
+                case AIState.Fleeing:
+                    CheckIfPlayerLost();
+                    Flee();
+                    break;
+            }
+        }
+
+        private void SyncBlackboardVariables()
+        {
+            if (behaviorAgent == null) return;
+
+            behaviorAgent.SetVariableValue("Agent", transform);
+            if (playerTransform != null)
+            {
+                behaviorAgent.SetVariableValue("Threat", playerTransform);
+            }
+            if (agent != null)
+            {
+                behaviorAgent.SetVariableValue("NavAgent", agent);
+            }
+            behaviorAgent.SetVariableValue("WanderRadius", wanderRadius);
+            behaviorAgent.SetVariableValue("FleeDistance", fleeDistance);
+        }
+
+        private void CheckForPlayer()
+        {
+            int hits = Physics.OverlapSphereNonAlloc(transform.position, detectionRadius, detectionColliders, playerLayer);
+            if (hits > 0 && detectionColliders[0] != null)
+            {
+                playerTransform = detectionColliders[0].transform;
+                TransitionToFleeing();
+            }
+        }
+
+        private void CheckIfPlayerLost()
+        {
+            if (playerTransform == null)
+            {
+                TransitionToWandering();
+                return;
+            }
+
+            float sqrDistance = (transform.position - playerTransform.position).sqrMagnitude;
+            if (sqrDistance > (fleeDistance * fleeDistance))
+            {
+                playerTransform = null;
+                TransitionToWandering();
+            }
+        }
+
+        private void TransitionToWandering()
+        {
+            currentState = AIState.Wandering;
+            agent.speed = originalSpeed;
+            wanderTimer = wanderTimerMax;
+        }
+
+        private void TransitionToFleeing()
+        {
+            currentState = AIState.Fleeing;
+            agent.speed = fleeSpeed;
+        }
+
+        private void Wander()
+        {
+            wanderTimer += Time.deltaTime;
+            if (wanderTimer >= wanderTimerMax)
+            {
+                Vector3 newPos = RandomNavSphere(transform.position, wanderRadius, -1);
+                agent.SetDestination(newPos);
+                wanderTimer = 0f;
+            }
+        }
+
+        private void Flee()
+        {
+            if (playerTransform == null) return;
+
+            Vector3 directionAwayFromPlayer = (transform.position - playerTransform.position).normalized;
+            Vector3 fleePosition = transform.position + directionAwayFromPlayer * fleeDistance;
+
+            if (NavMesh.SamplePosition(fleePosition, out NavMeshHit hit, fleeDistance, NavMesh.AllAreas))
             {
                 agent.SetDestination(hit.position);
             }
-            wanderTimer = wanderTimerMax;
         }
-    }
 
-    private void Flee()
-    {
-        Vector3 fleeDirection = transform.position - playerTransform.position;
-        Vector3 targetPosition = transform.position + fleeDirection.normalized * fleeDistance;
+        public static Vector3 RandomNavSphere(Vector3 origin, float dist, int layermask)
+        {
+            Vector3 randDirection = UnityEngine.Random.insideUnitSphere * dist;
+            randDirection += origin;
 
-        agent.SetDestination(targetPosition);
-    }
-    
+            if (NavMesh.SamplePosition(randDirection, out NavMeshHit navHit, dist, layermask))
+            {
+                return navHit.position;
+            }
 
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = (currentState == AIState.Fleeing) ? Color.red : Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, detectionRadius);
+            return origin;
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(transform.position, detectionRadius);
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(transform.position, fleeDistance);
+        }
     }
 }

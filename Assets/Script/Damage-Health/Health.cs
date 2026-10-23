@@ -1,107 +1,168 @@
-using UnityEngine;
 using System;
+using UnityEngine;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using TriInspector;
+using VContainer;
 
-[RequireComponent(typeof(StatusEffectManager))]
-public class Health : MonoBehaviour
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    [SerializeField] private float maxHealth = 100f;
-    [SerializeField] private bool destroyOnDeath = true;
-    [Header("Loot")]
-    [SerializeField] private GameObject geneticMaterialPrefab;
-
-    // --- ¡NUEVAS LÍNEAS! ---
-    [Header("Audio")]
-    [Tooltip("Nombre del SFX en el AudioManager al recibir daño")]
-    [SerializeField] private string hitSoundName;
-    [Tooltip("Nombre del SFX en el AudioManager al morir")]
-    [SerializeField] private string deathSoundName;
-    // --- FIN DE LÍNEAS NUEVAS ---
-
-    private float currentHealth;
-    private bool hasDied = false;
-    private float damageMultiplier = 1f;
-    private HitFeedback hitFeedback; 
-
-    public event Action<float, float> OnHealthChanged;
-    public event Action OnDeath;
-    public event Action OnHit; 
-
-    private void Awake()
+    [RequireComponent(typeof(StatusEffectManager))]
+    public class Health : MonoBehaviour
     {
-        currentHealth = maxHealth;
-        hitFeedback = GetComponent<HitFeedback>();
-    }
+        [Title("Health Settings")]
+        [Min(1f)]
+        [SerializeField] private float maxHealth = 100f;
+        [SerializeField] private bool destroyOnDeath = true;
 
-    private void Start()
-    {
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
-    }
+        [Title("Loot Settings")]
+        [SerializeField] private GameObject geneticMaterialPrefab;
 
-    public void TakeDamage(float baseDamage)
-    {
-        if (hasDied) return;
+        [Title("Sound Events (Sound Designer)")]
+        [SerializeField] private AudioCueSO hitAudioCue;
+        [SerializeField] private AudioCueSO deathAudioCue;
 
-        float finalDamage = baseDamage * damageMultiplier;
-        currentHealth = Mathf.Clamp(currentHealth - finalDamage, 0f, maxHealth);
-        
-        if(finalDamage > 0)
+        [Title("Legacy Sound Compatibility")]
+        [SerializeField] private string hitSoundName;
+        [SerializeField] private string deathSoundName;
+
+        private float currentHealth;
+        private bool hasDied = false;
+        private float damageMultiplier = 1f;
+        private HitFeedback hitFeedback;
+        private IAudioService audioService;
+
+        public event Action<float, float> OnHealthChanged;
+        public event Action OnDeath;
+        public event Action OnHit;
+
+        [Inject]
+        public void Construct(IAudioService audioService)
         {
-            Debug.Log($"<color=red>{gameObject.name} took {finalDamage} damage.</color> Health: {currentHealth}/{maxHealth}");
-            OnHit?.Invoke(); 
-            
-            // --- ¡NUEVA LÍNEA! ---
-            // Llama al AudioManager si el nombre del sonido no está vacío
-            if (AudioManager.Instance != null && !string.IsNullOrEmpty(hitSoundName))
+            this.audioService = audioService;
+        }
+
+        private void Awake()
+        {
+            currentHealth = maxHealth;
+            hitFeedback = GetComponent<HitFeedback>();
+        }
+
+        private void Start()
+        {
+            OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        }
+
+        public void TakeDamage(float baseDamage)
+        {
+            if (hasDied) return;
+
+            float finalDamage = baseDamage * damageMultiplier;
+            currentHealth = Mathf.Clamp(currentHealth - finalDamage, 0f, maxHealth);
+
+            if (finalDamage > 0f)
             {
-                AudioManager.Instance.PlaySFX(hitSoundName);
+                OnHit?.Invoke();
+                PlayHitSound();
             }
-            // --- FIN DE LÍNEA NUEVA ---
+
+            OnHealthChanged?.Invoke(currentHealth, maxHealth);
+
+            if (hitFeedback != null)
+            {
+                hitFeedback.PlayEffect();
+            }
+
+            if (currentHealth <= 0f)
+            {
+                Die();
+            }
         }
 
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
-        
-        if (hitFeedback != null)
+        private void PlayHitSound()
         {
-            hitFeedback.PlayEffect();
+            if (hitAudioCue != null)
+            {
+                if (audioService != null)
+                {
+                    audioService.Play(hitAudioCue, transform.position);
+                }
+                else if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.Play(hitAudioCue, transform.position);
+                }
+            }
+            else if (!string.IsNullOrEmpty(hitSoundName))
+            {
+                if (audioService != null)
+                {
+                    audioService.PlaySFX(hitSoundName, transform.position);
+                }
+                else if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlaySFX(hitSoundName);
+                }
+            }
         }
 
-        if (currentHealth <= 0f)
+        private void PlayDeathSound()
         {
-            Die();
+            if (deathAudioCue != null)
+            {
+                if (audioService != null)
+                {
+                    audioService.Play(deathAudioCue, transform.position);
+                }
+                else if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.Play(deathAudioCue, transform.position);
+                }
+            }
+            else if (!string.IsNullOrEmpty(deathSoundName))
+            {
+                if (audioService != null)
+                {
+                    audioService.PlaySFX(deathSoundName, transform.position);
+                }
+                else if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlaySFX(deathSoundName);
+                }
+            }
         }
-    }
 
-    public void SetDamageMultiplier(float multiplier)
-    {
-        this.damageMultiplier = Mathf.Max(0, multiplier);
-    }
-
-    public void Heal(float amount)
-    {
-        if (hasDied || amount <= 0) return;
-        currentHealth = Mathf.Clamp(currentHealth + amount, 0f, maxHealth);
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
-    }
-
-    private void Die()
-    {
-        if(hasDied) return;
-        hasDied = true;
-        
-        // --- ¡NUEVA LÍNEA! ---
-        // Llama al AudioManager para el sonido de muerte
-        if (AudioManager.Instance != null && !string.IsNullOrEmpty(deathSoundName))
+        public void SetDamageMultiplier(float multiplier)
         {
-            AudioManager.Instance.PlaySFX(deathSoundName);
+            damageMultiplier = Mathf.Max(0f, multiplier);
         }
-        // --- FIN DE LÍNEA NUEVA ---
-        
-        OnDeath?.Invoke();
-        if (geneticMaterialPrefab != null) Instantiate(geneticMaterialPrefab, transform.position, Quaternion.identity);
-        if (destroyOnDeath) Destroy(gameObject);
-    }
 
-    public float GetCurrentHealth() => currentHealth;
-    public float GetMaxHealth() => maxHealth;
-    public bool IsDead() => hasDied;
+        public void Heal(float amount)
+        {
+            if (hasDied || amount <= 0f) return;
+            currentHealth = Mathf.Clamp(currentHealth + amount, 0f, maxHealth);
+            OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        }
+
+        private void Die()
+        {
+            if (hasDied) return;
+            hasDied = true;
+
+            PlayDeathSound();
+            OnDeath?.Invoke();
+
+            if (geneticMaterialPrefab != null)
+            {
+                Instantiate(geneticMaterialPrefab, transform.position, Quaternion.identity);
+            }
+
+            if (destroyOnDeath)
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        public float GetCurrentHealth() => currentHealth;
+        public float GetMaxHealth() => maxHealth;
+        public bool IsDead() => hasDied;
+    }
 }

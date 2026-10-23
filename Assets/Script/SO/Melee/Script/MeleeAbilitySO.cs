@@ -1,101 +1,114 @@
-using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
+using UnityEngine;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using TriInspector;
 
-public abstract class MeleeAbilitySO : AbilitySO, IAimable
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    [Header("Configuración Melee")]
-    public float damage = 15f;
-    public float range = 2f;
-    // public LayerMask targetLayers; // <-- ¡¡BORRADO!! ¡¡CÓDIGO SUCIO FUERA!!
-    public float criticalDamageMultiplier = 2f;
-
-    [Header("Configuración de Cooldown y Combo")]
-    public float attackCooldown = 0.5f;
-    public bool enableCombos = false;
-    public int maxComboHits = 3;
-    public float comboResetTime = 1.5f;
-    public float[] comboDamageMultipliers = { 1f, 1.2f, 1.5f };
-
-    public Transform aimSource { get; set; }
-
-    private readonly Dictionary<GameObject, float> lastAttackTime = new Dictionary<GameObject, float>();
-    private readonly Dictionary<GameObject, int> comboIndexByUser = new Dictionary<GameObject, int>();
-    private readonly Dictionary<GameObject, float> lastComboTime = new Dictionary<GameObject, float>();
-
-    public override bool Execute(GameObject user)
+    public abstract class MeleeAbilitySO : AbilitySO, IAimable
     {
-        if (!CanAttack(user)) return false; 
+        [Title("Melee Configuration")]
+        [SerializeField] private float damage = 15f;
+        [SerializeField] private float range = 2f;
+        [SerializeField] private float criticalDamageMultiplier = 2f;
 
-        // --- ¡LÓGICA NUEVA! ---
-        TargetingProfile targeting = user.GetComponent<TargetingProfile>();
-        if (targeting == null)
+        [Title("Cooldown & Combo Configuration")]
+        [SerializeField] private float attackCooldown = 0.5f;
+        [SerializeField] private bool enableCombos = false;
+        [SerializeField] private int maxComboHits = 3;
+        [SerializeField] private float comboResetTime = 1.5f;
+        [SerializeField] private float[] comboDamageMultipliers = { 1f, 1.2f, 1.5f };
+
+        public float Damage => damage;
+        public float Range => range;
+        public float CriticalDamageMultiplier => criticalDamageMultiplier;
+        public float AttackCooldown => attackCooldown;
+        public bool EnableCombos => enableCombos;
+        public int MaxComboHits => maxComboHits;
+        public float ComboResetTime => comboResetTime;
+        public IReadOnlyList<float> ComboDamageMultipliers => comboDamageMultipliers;
+
+        private Transform aimSource;
+        public Transform AimSource => aimSource;
+
+        public void SetAimSource(Transform source)
         {
-            Debug.LogError($"¡El atacante {user.name} no tiene un componente TargetingProfile!");
-            return false;
+            aimSource = source;
         }
-        // --- FIN LÓGICA NUEVA ---
 
-        int comboIndex = 0;
-        if (enableCombos)
+        private readonly Dictionary<GameObject, float> lastAttackTime = new Dictionary<GameObject, float>();
+        private readonly Dictionary<GameObject, int> comboIndexByUser = new Dictionary<GameObject, int>();
+        private readonly Dictionary<GameObject, float> lastComboTime = new Dictionary<GameObject, float>();
+
+        protected static readonly Collider[] MeleeHitBuffer = new Collider[16];
+
+        public override bool Execute(GameObject user)
         {
-            if (!lastComboTime.TryGetValue(user, out float last) || Time.time > last + comboResetTime)
+            if (!CanAttack(user)) return false;
+
+            TargetingProfile targeting = user.GetComponent<TargetingProfile>();
+            if (targeting == null)
             {
-                comboIndexByUser[user] = 0;
+                Debug.LogError($"[MeleeAbilitySO] {user.name} does not have a TargetingProfile!", user);
+                return false;
             }
-            comboIndex = comboIndexByUser.GetValueOrDefault(user, 0);
+
+            int comboIndex = 0;
+            if (enableCombos)
+            {
+                if (!lastComboTime.TryGetValue(user, out float last) || Time.time > last + comboResetTime)
+                {
+                    comboIndexByUser[user] = 0;
+                }
+                comboIndex = comboIndexByUser.GetValueOrDefault(user, 0);
+            }
+
+            var effectManager = user.GetComponent<StatusEffectManager>();
+            var criticalBuff = effectManager != null ? effectManager.FindEffect(typeof(CriticalBuff)) : null;
+            bool isCritical = criticalBuff != null;
+
+            float finalDamage = damage;
+            if (enableCombos && comboIndex < comboDamageMultipliers.Length)
+            {
+                finalDamage *= comboDamageMultipliers[comboIndex];
+            }
+            if (isCritical)
+            {
+                finalDamage *= criticalDamageMultiplier;
+                effectManager.RemoveEffect(criticalBuff);
+            }
+
+            PerformMelee(user, finalDamage, targeting.DamageableLayers);
+
+            lastAttackTime[user] = Time.time;
+            if (enableCombos)
+            {
+                lastComboTime[user] = Time.time;
+                comboIndexByUser[user] = (comboIndex + 1) % maxComboHits;
+            }
+            return true;
         }
 
-        var effectManager = user.GetComponent<StatusEffectManager>();
-        var criticalBuff = effectManager?.FindEffect(typeof(CriticalBuff));
-        bool isCritical = criticalBuff != null;
+        public abstract void PerformMelee(GameObject user, float finalDamage, LayerMask damageLayers);
 
-        float finalDamage = damage;
-        if (enableCombos && comboIndex < comboDamageMultipliers.Length)
+        private bool CanAttack(GameObject user)
         {
-            finalDamage *= comboDamageMultipliers[comboIndex];
+            if (!lastAttackTime.TryGetValue(user, out float last)) return true;
+            return Time.time >= last + attackCooldown;
         }
-        if (isCritical)
+
+#if UNITY_EDITOR
+        public void DrawGizmos(Transform userTransform)
         {
-            finalDamage *= criticalDamageMultiplier;
-            effectManager.RemoveEffect(criticalBuff);
+            if (userTransform == null) return;
+            Transform source = (aimSource != null) ? aimSource : userTransform;
+
+            UnityEditor.Handles.color = new Color(1f, 0f, 0f, 0.2f);
+            UnityEditor.Handles.DrawSolidArc(source.position, Vector3.up, source.forward, 360, range);
+
+            UnityEditor.Handles.color = Color.red;
+            UnityEditor.Handles.DrawWireArc(source.position, Vector3.up, source.forward, 360, range);
         }
-        
-        // --- ¡LÍNEA MODIFICADA! ---
-        // Le pasamos el LayerMask del atacante
-        PerformMelee(user, finalDamage, targeting.DamageableLayers); 
-        
-        lastAttackTime[user] = Time.time;
-        if (enableCombos)
-        {
-            lastComboTime[user] = Time.time;
-            comboIndexByUser[user] = (comboIndex + 1) % maxComboHits;
-        }
-        return true;
+#endif
     }
-
-    // --- ¡FIRMA MODIFICADA! ---
-    // Ahora esta acción abstracta ACEPTA las layers
-    public abstract void PerformMelee(GameObject user, float finalDamage, LayerMask damageLayers);
-
-    private bool CanAttack(GameObject user)
-    {
-        if (!lastAttackTime.TryGetValue(user, out float last)) return true;
-        return Time.time >= last + attackCooldown;
-    }
-
-    #if UNITY_EDITOR
-    // (Tu código de Gizmos se mantiene igual)
-    public void DrawGizmos(Transform userTransform)
-    {
-        if (userTransform == null) return;
-        Transform source = (aimSource != null) ? aimSource : userTransform;
-
-        UnityEditor.Handles.color = new Color(1f, 0f, 0f, 0.2f);
-        UnityEditor.Handles.DrawSolidArc(source.position, Vector3.up, source.forward, 360, range);
-        
-        UnityEditor.Handles.color = Color.red;
-        UnityEditor.Handles.DrawWireArc(source.position, Vector3.up, source.forward, 360, range);
-    }
-    #endif
 }

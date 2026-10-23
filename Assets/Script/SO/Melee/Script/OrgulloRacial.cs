@@ -1,22 +1,25 @@
 using UnityEngine;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
 
-[CreateAssetMenu(fileName = "Orgullo Racial", menuName = "Habilidades/Melee/Orgullo Racial")]
-public class OrgulloRacialSO : MeleeAbilitySO
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    // --- ¡FIRMA MODIFICADA! ---
-    public override void PerformMelee(GameObject user, float finalDamage, LayerMask damageLayers)
+    [CreateAssetMenu(fileName = "Orgullo Racial", menuName = "Habilidades/Melee/Orgullo Racial")]
+    public class OrgulloRacialSO : MeleeAbilitySO
     {
-        Transform source = (aimSource != null) ? aimSource : user.transform;
-        
-        // --- ¡LÍNEA MODIFICADA! ---
-        Collider[] hits = Physics.OverlapSphere(source.position, range, damageLayers);
-
-        foreach (var hit in hits)
+        public override void PerformMelee(GameObject user, float finalDamage, LayerMask damageLayers)
         {
-            if (hit.gameObject == user) continue;
-            if (hit.TryGetComponent<Health>(out Health health))
+            Transform source = (AimSource != null) ? AimSource : user.transform;
+            int hits = Physics.OverlapSphereNonAlloc(source.position, Range, MeleeHitBuffer, damageLayers);
+
+            for (int i = 0; i < hits; i++)
             {
-                health.TakeDamage(finalDamage);
+                var hit = MeleeHitBuffer[i];
+                if (hit == null || hit.gameObject == user) continue;
+
+                if (hit.TryGetComponent<Health>(out Health health))
+                {
+                    health.TakeDamage(finalDamage);
+                }
             }
         }
     }

@@ -1,26 +1,25 @@
 using UnityEngine;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
 
-public class DamageManager : MonoBehaviour
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    public void ApplyDamage(DamageData data)
+    public class DamageManager : MonoBehaviour
     {
-        // Ejemplo simple
-        switch (data.type)
+        public void ApplyDamage(DamageData data)
         {
-            case DamageType.Physical:
-                Debug.Log($"Daño físico: {data.amount}");
-                break;
-            case DamageType.Poison:
-                Debug.Log($"Aplicando veneno: {data.amount} acumulaciones");
-                break;
-            case DamageType.Stun:
-                Debug.Log("Intentando aturdir al objetivo");
-                break;
-            case DamageType.Heal:
-                Debug.Log($"Curando {data.amount} puntos de vida");
-                break;
-        }
+            if (data.target == null) return;
 
-        // Aquí iría la lógica real de aplicar efectos al target
+            Health targetHealth = data.target.GetComponent<Health>();
+            if (targetHealth == null) return;
+
+            if (data.type == DamageType.Heal)
+            {
+                targetHealth.Heal(data.amount);
+            }
+            else
+            {
+                targetHealth.TakeDamage(data.amount);
+            }
+        }
     }
 }

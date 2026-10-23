@@ -1,53 +1,66 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using TriInspector;
+using VContainer;
 
-public class BossTrigger : MonoBehaviour
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    [Header("Objetos a Activar")]
-    public List<GameObject> objectsToActivate;
-
-    [Header("Configuración del Trigger")]
-    public LayerMask activationLayer;
-
-    // --- ¡NUEVA LÍNEA! ---
-    [Header("Referencias del Manager")]
-    [Tooltip("Arrastra aquí el objeto de la escena que tiene el script 'GameManager'.")]
-    [SerializeField] private GameManager gameManager;
-    // --- FIN DE LÍNEA NUEVA ---
-
-    private bool hasBeenTriggered = false;
-
-    private void OnTriggerEnter(Collider other)
+    [RequireComponent(typeof(Collider))]
+    public class BossTrigger : MonoBehaviour
     {
-        if (hasBeenTriggered) return;
-        
-        bool isActivationLayer = (activationLayer.value & (1 << other.gameObject.layer)) != 0;
-        if (!isActivationLayer) return; 
+        [Title("Trigger Configuration")]
+        [SerializeField] private LayerMask activationLayer;
+        [SerializeField] private List<GameObject> objectsToActivate = new List<GameObject>();
 
-        hasBeenTriggered = true;
+        [Title("Fallback References")]
+        [SerializeField] private GameManager gameManager;
 
-        foreach (GameObject obj in objectsToActivate)
+        private IGameStateService gameStateService;
+        private bool hasBeenTriggered = false;
+        private Collider triggerCollider;
+
+        [Inject]
+        public void Construct(IGameStateService gameStateService)
         {
-            if (obj != null)
+            this.gameStateService = gameStateService;
+        }
+
+        private void Awake()
+        {
+            triggerCollider = GetComponent<Collider>();
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (hasBeenTriggered) return;
+
+            bool isActivationLayer = (activationLayer.value & (1 << other.gameObject.layer)) != 0;
+            if (!isActivationLayer) return;
+
+            hasBeenTriggered = true;
+
+            for (int i = 0; i < objectsToActivate.Count; i++)
             {
-                obj.SetActive(true);
+                if (objectsToActivate[i] != null)
+                {
+                    objectsToActivate[i].SetActive(true);
+                }
+            }
+
+            if (gameStateService != null)
+            {
+                gameStateService.StartBossFight();
+            }
+            else if (gameManager != null)
+            {
+                gameManager.StartBossFight();
+            }
+
+            if (triggerCollider != null)
+            {
+                triggerCollider.enabled = false;
             }
         }
-
-        // --- ¡NUEVA LÍNEA! ---
-        // ¡Avisamos al GameManager que la pelea ha comenzado!
-        if (gameManager != null)
-        {
-            gameManager.StartBossFight();
-        }
-        else
-        {
-            Debug.LogError("¡BossTrigger no tiene una referencia al GameManager!");
-        }
-        // --- FIN DE LÍNEA NUEVA ---
-
-        GetComponent<Collider>().enabled = false;
     }
-
-    // (El código de OnDrawGizmos se queda igual...)
 }

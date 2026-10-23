@@ -1,59 +1,179 @@
-using UnityEngine;
 using System.Collections.Generic;
-using UnityEngine.EventSystems; // <--- ¡NUEVO! Necesitamos esto
+using UnityEngine;
+using UnityEngine.EventSystems;
+using DG.Tweening;
+using VContainer;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using TriInspector;
 
-public class EvolutionUI : MonoBehaviour
+namespace SaludosCamaradaHumano.GeneticalDrift.UI
 {
-    public GameObject evolutionPanel;
-    public EvolutionCardUI[] optionCards;
-
-    private void Awake()
+    public class EvolutionUI : MonoBehaviour
     {
-        evolutionPanel.SetActive(false);
-    }
+        [Title("UI Elements")]
+        [SerializeField] private GameObject evolutionPanel;
+        [SerializeField] private CanvasGroup panelCanvasGroup;
+        [SerializeField] private EvolutionCardUI[] optionCards;
 
-    /// <summary>
-    /// Método público que el EvolutionManager llamará.
-    /// </summary>
-    public void Show(List<AbilitySO> options, EvolutionManager manager)
-    {
-        evolutionPanel.SetActive(true);
-        for (int i = 0; i < optionCards.Length; i++)
+        [Title("Animation Settings")]
+        [SerializeField] private float fadeDuration = 0.3f;
+        [SerializeField] private float punchScaleAmount = 0.05f;
+
+        [Inject] private IEvolutionService evolutionService;
+
+        private Tween activeTween;
+
+        private void Awake()
         {
-            if (i < options.Count)
+            if (panelCanvasGroup == null && evolutionPanel != null)
             {
-                optionCards[i].gameObject.SetActive(true);
-                optionCards[i].Setup(options[i], manager); 
+                panelCanvasGroup = evolutionPanel.GetComponent<CanvasGroup>();
             }
-            else
+
+            if (evolutionPanel != null)
             {
-                optionCards[i].gameObject.SetActive(false);
+                evolutionPanel.SetActive(false);
             }
         }
 
-        // --- ¡LA MAGIA DEL JOYSTICK EMPIEZA AQUÍ! ---
-
-        // 1. Limpiamos cualquier selección anterior (por si acaso)
-        EventSystem.current.SetSelectedGameObject(null); // <--- NUEVO
-
-        // 2. Si hay opciones, seleccionamos el botón de la PRIMERA carta
-        if (options.Count > 0)
+        private void Start()
         {
-            // Le decimos al EventSystem: "¡Oye! El joystick ahora
-            // está controlando este botón".
-            EventSystem.current.SetSelectedGameObject(optionCards[0].selectButton.gameObject); // <--- NUEVO
-        }
-    }
+            if (evolutionService == null)
+            {
+                evolutionService = FindFirstObjectByType<MonoBehaviour>() is IEvolutionService foundService 
+                    ? foundService 
+                    : FindFirstObjectByType<GeneticalDrift.Gameplay.EvolutionManager>();
+            }
 
-    /// <summary>
-    /// Método público que el EvolutionManager llamará.
-    /// </summary>
-    public void Hide()
-    {
-        // Buena práctica: cuando se oculta el panel,
-        // le quitamos la selección a cualquier botón.
-        EventSystem.current.SetSelectedGameObject(null); // <--- NUEVO
-        
-        evolutionPanel.SetActive(false);
+            if (evolutionService != null)
+            {
+                SubscribeToService();
+            }
+        }
+
+        private void OnEnable()
+        {
+            if (evolutionService != null)
+            {
+                SubscribeToService();
+            }
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeFromService();
+            KillActiveTween();
+        }
+
+        private void OnDestroy()
+        {
+            UnsubscribeFromService();
+            KillActiveTween();
+        }
+
+        private void SubscribeToService()
+        {
+            if (evolutionService == null) return;
+            evolutionService.OnEvolutionChoicesAvailable -= HandleEvolutionChoices;
+            evolutionService.OnEvolutionChoicesAvailable += HandleEvolutionChoices;
+            evolutionService.OnEvolutionCompleted -= HandleEvolutionCompleted;
+            evolutionService.OnEvolutionCompleted += HandleEvolutionCompleted;
+        }
+
+        private void UnsubscribeFromService()
+        {
+            if (evolutionService == null) return;
+            evolutionService.OnEvolutionChoicesAvailable -= HandleEvolutionChoices;
+            evolutionService.OnEvolutionCompleted -= HandleEvolutionCompleted;
+        }
+
+        private void HandleEvolutionChoices(IReadOnlyList<AbilitySO> options)
+        {
+            Show(options, evolutionService);
+        }
+
+        private void HandleEvolutionCompleted()
+        {
+            Hide();
+        }
+
+        public void Show(IReadOnlyList<AbilitySO> options, IEvolutionService service)
+        {
+            if (evolutionPanel == null || options == null) return;
+
+            KillActiveTween();
+            evolutionPanel.SetActive(true);
+
+            if (panelCanvasGroup != null)
+            {
+                panelCanvasGroup.alpha = 0f;
+                activeTween = panelCanvasGroup.DOFade(1f, fadeDuration)
+                    .SetUpdate(true);
+            }
+
+            evolutionPanel.transform.localScale = Vector3.one * (1f - punchScaleAmount);
+            evolutionPanel.transform.DOScale(Vector3.one, fadeDuration)
+                .SetEase(Ease.OutBack)
+                .SetUpdate(true);
+
+            for (int i = 0; i < optionCards.Length; i++)
+            {
+                if (optionCards[i] == null) continue;
+
+                if (i < options.Count)
+                {
+                    optionCards[i].gameObject.SetActive(true);
+                    optionCards[i].Setup(options[i], service);
+                }
+                else
+                {
+                    optionCards[i].gameObject.SetActive(false);
+                }
+            }
+
+            if (EventSystem.current != null)
+            {
+                EventSystem.current.SetSelectedGameObject(null);
+                if (options.Count > 0 && optionCards.Length > 0 && optionCards[0] != null && optionCards[0].SelectButton != null)
+                {
+                    EventSystem.current.SetSelectedGameObject(optionCards[0].SelectButton.gameObject);
+                }
+            }
+        }
+
+        public void Hide()
+        {
+            if (EventSystem.current != null)
+            {
+                EventSystem.current.SetSelectedGameObject(null);
+            }
+
+            if (panelCanvasGroup != null)
+            {
+                KillActiveTween();
+                activeTween = panelCanvasGroup.DOFade(0f, fadeDuration)
+                    .SetUpdate(true)
+                    .OnComplete(() =>
+                    {
+                        if (evolutionPanel != null)
+                        {
+                            evolutionPanel.SetActive(false);
+                        }
+                    });
+            }
+            else if (evolutionPanel != null)
+            {
+                evolutionPanel.SetActive(false);
+            }
+        }
+
+        private void KillActiveTween()
+        {
+            if (activeTween != null && activeTween.IsActive())
+            {
+                activeTween.Kill();
+                activeTween = null;
+            }
+        }
     }
 }

@@ -1,51 +1,83 @@
-﻿using UnityEngine;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System; // Necesario para Type
+using UnityEngine;
 
-public class StatusEffectManager : MonoBehaviour
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    // Cambiamos a public para que los scripts de ataque puedan leerlo
-    public readonly List<StatusEffect> activeEffects = new List<StatusEffect>();
-
-    public void ApplyEffect(StatusEffect effect)
+    public class StatusEffectManager : MonoBehaviour
     {
-        var existingEffect = activeEffects.FirstOrDefault(e => e.GetType() == effect.GetType());
-        if (existingEffect != null)
+        private readonly List<StatusEffect> activeEffects = new List<StatusEffect>();
+
+        public IReadOnlyList<StatusEffect> ActiveEffects => activeEffects;
+
+        public void ApplyEffect(StatusEffect effect)
         {
-            activeEffects.Remove(existingEffect);
+            if (effect == null) return;
+
+            Type newType = effect.GetType();
+            for (int i = activeEffects.Count - 1; i >= 0; i--)
+            {
+                if (activeEffects[i].GetType() == newType)
+                {
+                    activeEffects[i].OnEnd();
+                    activeEffects.RemoveAt(i);
+                    break;
+                }
+            }
+
+            activeEffects.Add(effect);
+            effect.OnApply();
         }
-        activeEffects.Add(effect);
-        effect.OnApply();
-    }
 
-    // --- NUEVO MÉTODO PARA QUITAR UN EFECTO ---
-    public void RemoveEffect(StatusEffect effect)
-    {
-        if (effect != null && activeEffects.Contains(effect))
+        public void RemoveEffect(StatusEffect effect)
         {
-            effect.OnEnd();
-            activeEffects.Remove(effect);
-        }
-    }
-    
-    // --- NUEVO MÉTODO PARA BUSCAR UN TIPO DE EFECTO ---
-    public StatusEffect FindEffect(Type effectType)
-    {
-        return activeEffects.FirstOrDefault(e => e.GetType() == effectType);
-    }
-
-    private void Update()
-    {
-        if (activeEffects.Count == 0) return;
-        for (int i = activeEffects.Count - 1; i >= 0; i--)
-        {
-            var effect = activeEffects[i];
-            effect.Tick(Time.deltaTime);
-            if (effect.IsFinished())
+            if (effect != null && activeEffects.Remove(effect))
             {
                 effect.OnEnd();
-                activeEffects.RemoveAt(i);
+            }
+        }
+
+        public StatusEffect FindEffect(Type effectType)
+        {
+            if (effectType == null) return null;
+
+            for (int i = 0; i < activeEffects.Count; i++)
+            {
+                if (activeEffects[i].GetType() == effectType)
+                {
+                    return activeEffects[i];
+                }
+            }
+            return null;
+        }
+
+        public T FindEffect<T>() where T : StatusEffect
+        {
+            for (int i = 0; i < activeEffects.Count; i++)
+            {
+                if (activeEffects[i] is T match)
+                {
+                    return match;
+                }
+            }
+            return null;
+        }
+
+        private void Update()
+        {
+            if (activeEffects.Count == 0) return;
+
+            float dt = Time.deltaTime;
+            for (int i = activeEffects.Count - 1; i >= 0; i--)
+            {
+                var effect = activeEffects[i];
+                effect.Tick(dt);
+
+                if (effect.IsFinished())
+                {
+                    effect.OnEnd();
+                    activeEffects.RemoveAt(i);
+                }
             }
         }
     }

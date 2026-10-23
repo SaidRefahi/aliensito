@@ -1,111 +1,123 @@
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
+using SaludosCamaradaHumano.GeneticalDrift.Gameplay;
+using TriInspector;
 
-public class HealthBarUI : MonoBehaviour
+namespace SaludosCamaradaHumano.GeneticalDrift.UI
 {
-    [SerializeField] private Health healthComponent;
-    [SerializeField] private Image healthFill;
-    [SerializeField] private bool smoothTransition = true;
-    [SerializeField] private float transitionSpeed = 2f;
-    
-    private float targetFillAmount;
-
-    private void Start()
+    public class HealthBarUI : MonoBehaviour
     {
-        Debug.Log("HealthBarUI Start() called");
-        
-        if (healthComponent != null)
-        {
-            UpdateHealthBar(healthComponent.GetCurrentHealth(), healthComponent.GetMaxHealth());
-        }
-        else
-        {
-            Debug.LogError("Health component is NULL in Start()!");
-        }
-        
-        if (healthFill == null)
-        {
-            Debug.LogError("healthFill is NULL in Start()!");
-        }
-    }
+        [Title("Health Bar Visuals")]
+        [SerializeField] private Health healthComponent;
+        [SerializeField] private Image healthFill;
+        [SerializeField] private Image ghostFill;
+        [SerializeField] private bool smoothTransition = true;
+        [SerializeField] private float transitionDuration = 0.25f;
 
-    private void Update()
-    {
-        if (smoothTransition && healthFill != null)
-        {
-            healthFill.fillAmount = Mathf.MoveTowards(healthFill.fillAmount, targetFillAmount, transitionSpeed * Time.deltaTime);
-        }
-    }
+        private Tween activeFillTween;
+        private Tween activeGhostTween;
 
-    private void OnEnable()
-    {
-        if (healthComponent != null)
-        {
-            healthComponent.OnHealthChanged += OnHealthChanged;
-            healthComponent.OnDeath += OnEntityDeath;
-        }
-    }
+        public bool HasHealthComponent => healthComponent != null;
 
-    private void OnDisable()
-    {
-        if (healthComponent != null)
+        private void Start()
         {
-            healthComponent.OnHealthChanged -= OnHealthChanged;
-            healthComponent.OnDeath -= OnEntityDeath;
+            if (healthComponent != null)
+            {
+                UpdateHealthBar(healthComponent.GetCurrentHealth(), healthComponent.GetMaxHealth(), false);
+            }
         }
-    }
 
-    private void OnHealthChanged(float currentHealth, float maxHealth)
-    {
-        UpdateHealthBar(currentHealth, maxHealth);
-    }
-
-    private void UpdateHealthBar(float currentHealth, float maxHealth)
-    {
-        if (healthFill == null) return;
-        
-        float ratio = maxHealth > 0 ? currentHealth / maxHealth : 0f;
-        
-        if (smoothTransition)
+        private void OnEnable()
         {
-            targetFillAmount = ratio;
+            if (healthComponent != null)
+            {
+                healthComponent.OnHealthChanged += HandleHealthChanged;
+                healthComponent.OnDeath += HandleEntityDeath;
+            }
         }
-        else
-        {
-            healthFill.fillAmount = ratio;
-        }
-    }
 
-    private void OnEntityDeath()
-    {
-        Debug.Log($"Entity {healthComponent.gameObject.name} died - Health bar updated");
-    }
-
-    public void SetHealthComponent(Health health)
-    {
-        if (healthComponent != null)
+        private void OnDisable()
         {
-            healthComponent.OnHealthChanged -= OnHealthChanged;
-            healthComponent.OnDeath -= OnEntityDeath;
+            if (healthComponent != null)
+            {
+                healthComponent.OnHealthChanged -= HandleHealthChanged;
+                healthComponent.OnDeath -= HandleEntityDeath;
+            }
+            activeFillTween?.Kill();
+            activeGhostTween?.Kill();
         }
-        
-        healthComponent = health;
-        
-        if (healthComponent != null)
-        {
-            healthComponent.OnHealthChanged += OnHealthChanged;
-            healthComponent.OnDeath += OnEntityDeath;
-            UpdateHealthBar(healthComponent.GetCurrentHealth(), healthComponent.GetMaxHealth());
-        }
-    }
 
-    public bool HasHealthComponent => healthComponent != null;
-    
-    public void ForceUpdateHealthBar()
-    {
-        if (healthComponent != null)
+        private void OnDestroy()
         {
-            UpdateHealthBar(healthComponent.GetCurrentHealth(), healthComponent.GetMaxHealth());
+            activeFillTween?.Kill();
+            activeGhostTween?.Kill();
+        }
+
+        private void HandleHealthChanged(float currentHealth, float maxHealth)
+        {
+            UpdateHealthBar(currentHealth, maxHealth, smoothTransition);
+        }
+
+        private void UpdateHealthBar(float currentHealth, float maxHealth, bool animate)
+        {
+            if (healthFill == null) return;
+
+            float ratio = maxHealth > 0f ? currentHealth / maxHealth : 0f;
+
+            activeFillTween?.Kill();
+
+            if (animate)
+            {
+                activeFillTween = healthFill.DOFillAmount(ratio, transitionDuration)
+                    .SetEase(Ease.OutQuad)
+                    .SetLink(gameObject);
+
+                if (ghostFill != null)
+                {
+                    activeGhostTween?.Kill();
+                    activeGhostTween = ghostFill.DOFillAmount(ratio, transitionDuration * 1.5f)
+                        .SetDelay(0.1f)
+                        .SetEase(Ease.OutQuad)
+                        .SetLink(gameObject);
+                }
+            }
+            else
+            {
+                healthFill.fillAmount = ratio;
+                if (ghostFill != null)
+                {
+                    ghostFill.fillAmount = ratio;
+                }
+            }
+        }
+
+        private void HandleEntityDeath() { }
+
+        public void SetHealthComponent(Health health)
+        {
+            if (healthComponent != null)
+            {
+                healthComponent.OnHealthChanged -= HandleHealthChanged;
+                healthComponent.OnDeath -= HandleEntityDeath;
+            }
+
+            healthComponent = health;
+
+            if (healthComponent != null)
+            {
+                healthComponent.OnHealthChanged += HandleHealthChanged;
+                healthComponent.OnDeath += HandleEntityDeath;
+                UpdateHealthBar(healthComponent.GetCurrentHealth(), healthComponent.GetMaxHealth(), false);
+            }
+        }
+
+        public void ForceUpdateHealthBar()
+        {
+            if (healthComponent != null)
+            {
+                UpdateHealthBar(healthComponent.GetCurrentHealth(), healthComponent.GetMaxHealth(), false);
+            }
         }
     }
 }

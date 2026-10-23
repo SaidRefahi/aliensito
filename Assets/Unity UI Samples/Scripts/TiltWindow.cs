@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class TiltWindow : MonoBehaviour
 {
-	public Vector2 range = new Vector2(5f, 3f);
+	[SerializeField] private Vector2 range = new Vector2(5f, 3f);
 
 	Transform mTrans;
 	Quaternion mStart;

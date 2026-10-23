@@ -1,34 +1,53 @@
 using UnityEngine;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using VContainer;
 
-[RequireComponent(typeof(ParticleSystem))]
-public class ReturnToPool : MonoBehaviour
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    [Tooltip("¡IMPORTANTE! Este Tag DEBE COINCIDIR con el Tag en el PoolManager.")]
-    [SerializeField] private string poolTag;
-
-    private ParticleSystem ps;
-
-    private void Awake()
+    [RequireComponent(typeof(ParticleSystem))]
+    public class ReturnToPool : MonoBehaviour
     {
-        ps = GetComponent<ParticleSystem>();
-    }
+        [Tooltip("Tag matching the pool in PoolManager.")]
+        [SerializeField] private string poolTag;
 
-    private void OnEnable()
-    {
-        // Cada vez que el PoolManager lo "despierta" (activa),
-        // nos aseguramos de que se reproduzca.
-        ps.Play();
-    }
+        private ParticleSystem ps;
+        private IPoolService poolService;
 
-    private void Update()
-    {
-        // En cada frame, comprobamos si la partícula (y todos sus sub-sistemas)
-        // ha terminado de reproducirse.
-        if (ps != null && !ps.IsAlive(true))
+        [Inject]
+        public void Construct(IPoolService poolService)
         {
-            // Si terminó, ¡de vuelta al pool!
-            // Usamos el PoolManager existente
-            PoolManager.Instance.ReturnToPool(poolTag, gameObject);
+            this.poolService = poolService;
+        }
+
+        private void Awake()
+        {
+            ps = GetComponent<ParticleSystem>();
+            var main = ps.main;
+            main.stopAction = ParticleSystemStopAction.Callback;
+        }
+
+        private void OnEnable()
+        {
+            if (ps != null)
+            {
+                ps.Play();
+            }
+        }
+
+        private void OnParticleSystemStopped()
+        {
+            if (poolService != null)
+            {
+                poolService.Return(gameObject);
+            }
+            else if (PoolManager.Instance != null && !string.IsNullOrEmpty(poolTag))
+            {
+                PoolManager.Instance.ReturnToPool(poolTag, gameObject);
+            }
+            else
+            {
+                gameObject.SetActive(false);
+            }
         }
     }
 }

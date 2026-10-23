@@ -1,33 +1,41 @@
 using UnityEngine;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using TriInspector;
 
-[CreateAssetMenu(fileName = "Musculatura Bestial", menuName = "Habilidades/Melee/Musculatura Bestial")]
-public class MusculaturaBestial : MeleeAbilitySO
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    [Header("Musculatura Bestial Settings")]
-    [Range(0f, 1f)] public float stunChance = 0.25f;
-    public float stunDuration = 1.5f;
-
-    // --- ¡FIRMA MODIFICADA! ---
-    public override void PerformMelee(GameObject user, float finalDamage, LayerMask damageLayers)
+    [CreateAssetMenu(fileName = "Musculatura Bestial", menuName = "Habilidades/Melee/Musculatura Bestial")]
+    public class MusculaturaBestial : MeleeAbilitySO
     {
-        Transform source = (aimSource != null) ? aimSource : user.transform;
-        
-        // --- ¡LÍNEA MODIFICADA! ---
-        // Usamos el 'damageLayers' que nos pasan, ¡no el 'targetLayers' sucio!
-        Collider[] hits = Physics.OverlapSphere(source.position, range, damageLayers);
+        [Title("Musculatura Bestial Settings")]
+        [Range(0f, 1f)]
+        [SerializeField] private float stunChance = 0.25f;
+        [SerializeField] private float stunDuration = 1.5f;
 
-        foreach (var hit in hits)
+        public float StunChance => stunChance;
+        public float StunDuration => stunDuration;
+
+        public override void PerformMelee(GameObject user, float finalDamage, LayerMask damageLayers)
         {
-            if (hit.gameObject == user) continue;
-            if (hit.TryGetComponent<Health>(out Health health))
+            Transform source = (AimSource != null) ? AimSource : user.transform;
+            int hits = Physics.OverlapSphereNonAlloc(source.position, Range, MeleeHitBuffer, damageLayers);
+
+            for (int i = 0; i < hits; i++)
             {
-                health.TakeDamage(finalDamage);
-            }
-            if (Random.value <= stunChance)
-            {
-                if (hit.TryGetComponent<StatusEffectManager>(out var effectManager))
+                var hit = MeleeHitBuffer[i];
+                if (hit == null || hit.gameObject == user) continue;
+
+                if (hit.TryGetComponent<Health>(out Health health))
                 {
-                    effectManager.ApplyEffect(new Stun(hit.gameObject, stunDuration));
+                    health.TakeDamage(finalDamage);
+                }
+
+                if (Random.value <= stunChance)
+                {
+                    if (hit.TryGetComponent<StatusEffectManager>(out var effectManager))
+                    {
+                        effectManager.ApplyEffect(new Stun(hit.gameObject, stunDuration));
+                    }
                 }
             }
         }

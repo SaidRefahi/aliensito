@@ -1,150 +1,200 @@
-using UnityEngine;
-using System.Collections.Generic;
-using System.Linq;
 using System;
-using UnityEngine.InputSystem; // Necesario para el PlayerInput
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using TriInspector;
 
-public class EvolutionManager : MonoBehaviour
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    public static EvolutionManager Instance { get; private set; }
-    
-    [Header("Referencias")]
-    [SerializeField] private PlayerController playerController;
-    [SerializeField] private EvolutionUI evolutionUI;
-    [SerializeField] private PlayerInput playerInput; // Arrastra tu componente PlayerInput aquí
-
-    private PlayerAbilityHandler playerAbilityHandler;
-
-    [Header("Configuración de Evolución")]
-    [SerializeField] private int geneticMaterialNeeded = 100;
-    
-    [Tooltip("¡IMPORTANTE! Arrastra aquí SÓLO las habilidades de Nivel 1 (Base). Las mejoras se añadirán solas.")]
-    [SerializeField] private List<AbilityGroup> baseAbilityGroups; 
-
-    private int currentGeneticMaterial = 0;
-    private List<AbilitySO> availableAbilityPool;
-
-    private void Awake()
+    [Serializable]
+    public class AbilityGroup
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
-        
-        if (playerController == null) playerController = FindFirstObjectByType<PlayerController>();
-        
-        // Asignación automática de PlayerInput si no está asignado
-        if (playerInput == null)
-        {
-            playerInput = playerController.GetComponent<PlayerInput>();
-        }
-        
-        playerAbilityHandler = playerController.GetComponent<PlayerAbilityHandler>();
-        if (playerAbilityHandler == null) Debug.LogError("¡EvolutionManager no encontró PlayerAbilityHandler!");
-        if (evolutionUI == null) Debug.LogError("¡EvolutionUI no asignada en el EvolutionManager!");
-        if (playerInput == null) Debug.LogError("¡PlayerInput no asignado en el EvolutionManager! No se podrá cambiar de mapa.");
-        
-        availableAbilityPool = new List<AbilitySO>();
-        foreach (var group in baseAbilityGroups)
-        {
-            availableAbilityPool.AddRange(group.abilities);
-        }
+        public string groupName;
+        public List<AbilitySO> abilities;
     }
 
-    // ... (AddGeneticMaterial no necesita cambios) ...
-    public void AddGeneticMaterial(int amount)
+    public class EvolutionManager : MonoBehaviour, IEvolutionService
     {
-        currentGeneticMaterial += amount;
-        Debug.Log($"Material genético: {currentGeneticMaterial}/{geneticMaterialNeeded}");
-        
-        if (currentGeneticMaterial >= geneticMaterialNeeded)
+        public static EvolutionManager Instance { get; private set; }
+
+        public event Action<IReadOnlyList<AbilitySO>> OnEvolutionChoicesAvailable;
+        public event Action OnEvolutionCompleted;
+        public event Action<int, int> OnGeneticMaterialChanged;
+
+        [Title("Dependencies")]
+        [SerializeField] private PlayerController playerController;
+        [SerializeField] private PlayerInput playerInput;
+
+        [Title("Evolution Configuration")]
+        [Min(1)]
+        [SerializeField] private int geneticMaterialNeeded = 100;
+        [SerializeField] private List<AbilityGroup> baseAbilityGroups = new List<AbilityGroup>();
+
+        private PlayerAbilityHandler playerAbilityHandler;
+        private int currentGeneticMaterial = 0;
+        private readonly List<AbilitySO> availableAbilityPool = new List<AbilitySO>();
+        private readonly List<AbilitySO> candidateBuffer = new List<AbilitySO>();
+        private readonly List<AbilitySO> resultBuffer = new List<AbilitySO>();
+        private readonly HashSet<AbilitySO> equippedBaseSet = new HashSet<AbilitySO>();
+
+        public int CurrentGeneticMaterial => currentGeneticMaterial;
+        public int TargetGeneticMaterial => geneticMaterialNeeded;
+
+        private void Awake()
         {
-            currentGeneticMaterial -= geneticMaterialNeeded;
-            ShowEvolutionUI();
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+
+            ResolveDependencies();
+            InitializeAbilityPool();
         }
-    }
 
-    public void SelectEvolution(AbilitySO selectedAbility)
-    {
-        if (selectedAbility == null) return;
-        Debug.Log($"Evolución seleccionada: {selectedAbility.abilityName}");
-        
-        // 1. Equipa la habilidad en el jugador
-        playerAbilityHandler.EvolveAbility(selectedAbility.slot, selectedAbility); 
-
-        // 2. Lógica de desbloqueo
-        if (availableAbilityPool.Contains(selectedAbility))
+        private void ResolveDependencies()
         {
+            if (playerController == null)
+            {
+                playerController = FindFirstObjectByType<PlayerController>();
+            }
+
+            if (playerController != null)
+            {
+                if (playerInput == null)
+                {
+                    playerInput = playerController.GetComponent<PlayerInput>();
+                }
+                playerAbilityHandler = playerController.GetComponent<PlayerAbilityHandler>();
+            }
+        }
+
+        private void InitializeAbilityPool()
+        {
+            availableAbilityPool.Clear();
+            for (int i = 0; i < baseAbilityGroups.Count; i++)
+            {
+                var group = baseAbilityGroups[i];
+                if (group?.abilities == null) continue;
+
+                for (int j = 0; j < group.abilities.Count; j++)
+                {
+                    if (group.abilities[j] != null)
+                    {
+                        availableAbilityPool.Add(group.abilities[j]);
+                    }
+                }
+            }
+        }
+
+        public void AddGeneticMaterial(int amount)
+        {
+            if (amount <= 0) return;
+
+            currentGeneticMaterial += amount;
+            OnGeneticMaterialChanged?.Invoke(currentGeneticMaterial, geneticMaterialNeeded);
+
+            if (currentGeneticMaterial >= geneticMaterialNeeded)
+            {
+                currentGeneticMaterial -= geneticMaterialNeeded;
+                TriggerEvolutionChoice();
+            }
+        }
+
+        public void SelectEvolution(AbilitySO selectedAbility)
+        {
+            if (selectedAbility == null) return;
+
+            if (playerAbilityHandler != null)
+            {
+                playerAbilityHandler.EvolveAbility(selectedAbility.Slot, selectedAbility);
+            }
+
             availableAbilityPool.Remove(selectedAbility);
-        }
 
-        if (selectedAbility.nextLevelAbility != null)
-        {
-            availableAbilityPool.Add(selectedAbility.nextLevelAbility);
-            Debug.Log($"¡Pool actualizado! Se desbloqueó {selectedAbility.nextLevelAbility.name}");
-        }
+            if (selectedAbility.NextLevelAbility != null)
+            {
+                availableAbilityPool.Add(selectedAbility.NextLevelAbility);
+            }
 
-        // 3. Reanuda el juego
-        Time.timeScale = 1f;
-        
-        // --- ¡CORREGIDO! ---
-        // Al reanudar, devolvemos el control a tu Action Map "Player"
-        playerInput.SwitchCurrentActionMap("Player"); 
-        
-        evolutionUI.Hide(); 
-    }
-
-    private void ShowEvolutionUI()
-    {
-        // 1. Pausa el juego
-        Time.timeScale = 0f; 
-        
-        // Inmediatamente cambiamos al Action Map "UI"
-        playerInput.SwitchCurrentActionMap("UI"); 
-        
-        // 2. Prepara las opciones
-        List<AbilitySO> options = GetRandomAbilities(3);
-        
-        if (options.Count == 0)
-        {
-            Debug.LogWarning("No hay más habilidades para ofrecer. Reanudando.");
-            // Si no hay opciones, debemos revertir todo
             Time.timeScale = 1f;
-            
-            // --- ¡CORREGIDO! ---
-            // También revertimos al Action Map "Player"
-            playerInput.SwitchCurrentActionMap("Player"); 
-            
-            return;
-        }
-        
-        // 3. Muestra la UI (esto también seleccionará el primer botón)
-        evolutionUI.Show(options, this);
-    }
 
-    // ... (GetRandomAbilities no necesita cambios) ...
-    private List<AbilitySO> GetRandomAbilities(int count)
-    {
-        List<AbilitySO> equippedAbilities = playerAbilityHandler.GetEquippedAbilities();
-        List<AbilitySO> equippedBaseAbilities = new List<AbilitySO>();
-        
-        foreach (var ability in equippedAbilities)
+            if (playerInput != null)
+            {
+                playerInput.SwitchCurrentActionMap("Player");
+            }
+
+            OnEvolutionCompleted?.Invoke();
+        }
+
+        private void TriggerEvolutionChoice()
         {
-            equippedBaseAbilities.Add(ability.baseAbility ?? ability); 
+            Time.timeScale = 0f;
+
+            if (playerInput != null)
+            {
+                playerInput.SwitchCurrentActionMap("UI");
+            }
+
+            List<AbilitySO> options = GetRandomAbilitiesNonAlloc(3);
+
+            if (options.Count == 0)
+            {
+                Debug.LogWarning("[EvolutionManager] No more abilities available. Resuming.");
+                Time.timeScale = 1f;
+                if (playerInput != null)
+                {
+                    playerInput.SwitchCurrentActionMap("Player");
+                }
+                return;
+            }
+
+            OnEvolutionChoicesAvailable?.Invoke(options);
         }
 
-        List<AbilitySO> filteredPool = availableAbilityPool.Except(equippedBaseAbilities).ToList();
-        
-        return filteredPool.OrderBy(x => UnityEngine.Random.value).Take(count).ToList();
-    }
-}
+        private List<AbilitySO> GetRandomAbilitiesNonAlloc(int count)
+        {
+            resultBuffer.Clear();
+            candidateBuffer.Clear();
+            equippedBaseSet.Clear();
 
-// --- CLASE AUXILIAR (se mantiene) ---
-[System.Serializable]
-public class AbilityGroup
-{
-    public string groupName;
-    public List<AbilitySO> abilities;
+            if (playerAbilityHandler != null)
+            {
+                var equipped = playerAbilityHandler.GetEquippedAbilities();
+                for (int i = 0; i < equipped.Count; i++)
+                {
+                    var ab = equipped[i];
+                    if (ab != null)
+                    {
+                        equippedBaseSet.Add(ab.BaseAbility != null ? ab.BaseAbility : ab);
+                    }
+                }
+            }
+
+            for (int i = 0; i < availableAbilityPool.Count; i++)
+            {
+                var candidate = availableAbilityPool[i];
+                if (!equippedBaseSet.Contains(candidate))
+                {
+                    candidateBuffer.Add(candidate);
+                }
+            }
+
+            // Non-allocating Fisher-Yates partial shuffle
+            int pickCount = Mathf.Min(count, candidateBuffer.Count);
+            for (int i = 0; i < pickCount; i++)
+            {
+                int randomIndex = UnityEngine.Random.Range(i, candidateBuffer.Count);
+                var temp = candidateBuffer[i];
+                candidateBuffer[i] = candidateBuffer[randomIndex];
+                candidateBuffer[randomIndex] = temp;
+
+                resultBuffer.Add(candidateBuffer[i]);
+            }
+
+            return resultBuffer;
+        }
+    }
 }

@@ -1,91 +1,137 @@
+using System;
+using System.Threading;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using TriInspector;
+using VContainer;
 
-public class Projectile : MonoBehaviour
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    public string poolTag; 
-    
-    public bool isCritical = false;
-    public float criticalDamageMultiplier = 2f;
-    
-    [Header("Configuración de Impacto")]
-    public float damage = 10f;
-    public LayerMask damageableLayers; 
-    
-    [Tooltip("Capas que destruyen el proyectil SIN hacerles daño (ej. Paredes)")] // <--- ¡NUEVO!
-    public LayerMask obstacleLayers; // <--- ¡NUEVO!
-    
-    public float lifetime = 5f;
-
-    [Header("Evolución: Saliva Ácida")]
-    public bool applyPoison = false;
-    public float poisonDamagePerSecond = 2f;
-    public float poisonDuration = 5f;
-
-    [Header("Evolución: Todos Caen")]
-    public bool applyVulnerability = false;
-    public float damageMultiplier = 1.5f;
-    public float vulnerabilityDuration = 5f;
-
-    private void OnEnable()
+    public class Projectile : MonoBehaviour
     {
-        Invoke(nameof(ReturnToPool), lifetime);
-    }
+        [Title("Pool Configuration")]
+        [SerializeField] private string poolTag = "Projectile";
 
-    private void ReturnToPool()
-    {
-        if (!gameObject.activeSelf) return;
+        [Title("Damage Configuration")]
+        [SerializeField] private float damage = 10f;
+        [SerializeField] private float criticalDamageMultiplier = 2f;
+        [SerializeField] private LayerMask damageableLayers;
+        [SerializeField] private LayerMask obstacleLayers;
+        [SerializeField] private float lifetime = 5f;
 
-        if (string.IsNullOrEmpty(poolTag))
+        [Title("Status Effects")]
+        [SerializeField] private bool applyPoison = false;
+        [SerializeField] private float poisonDamagePerSecond = 2f;
+        [SerializeField] private float poisonDuration = 5f;
+        [SerializeField] private bool applyVulnerability = false;
+        [SerializeField] private float damageMultiplier = 1.5f;
+        [SerializeField] private float vulnerabilityDuration = 5f;
+
+        [SerializeField] private bool isCritical = false;
+
+        public bool IsCritical => isCritical;
+        public LayerMask DamageableLayers => damageableLayers;
+
+        public void SetCritical(bool value)
         {
-            Debug.LogWarning("¡Projectile no tiene poolTag! Usando SetActive(false).");
-            gameObject.SetActive(false);
+            isCritical = value;
         }
-        else
+
+        public void SetDamageableLayers(LayerMask layers)
         {
-            PoolManager.Instance.ReturnToPool(poolTag, gameObject);
+            damageableLayers = layers;
         }
-    }
 
-    private void OnDisable()
-    {
-        CancelInvoke();
-        isCritical = false; 
-    }
+        private IPoolService poolService;
+        private CancellationTokenSource lifetimeCts;
 
-    // --- ¡MÉTODO MODIFICADO! ---
-    private void OnTriggerEnter(Collider other)
-    {
-        // Guardamos la capa del objeto para una comprobación más limpia
-        int otherLayer = 1 << other.gameObject.layer; // <--- NUEVO
-
-        // --- Comprobación 1: ¿Es una capa DAÑABLE? ---
-        if ((damageableLayers.value & otherLayer) != 0) // <--- MODIFICADO
+        [Inject]
+        public void Construct(IPoolService poolService)
         {
-            StatusEffectManager effectManager = other.GetComponent<StatusEffectManager>();
-            if (other.TryGetComponent<Health>(out Health health))
+            this.poolService = poolService;
+        }
+
+        private void OnEnable()
+        {
+            lifetimeCts?.Cancel();
+            lifetimeCts?.Dispose();
+            lifetimeCts = new CancellationTokenSource();
+
+            StartLifetimeTimer(lifetimeCts.Token).Forget();
+        }
+
+        private void OnDisable()
+        {
+            lifetimeCts?.Cancel();
+            lifetimeCts?.Dispose();
+            lifetimeCts = null;
+            isCritical = false;
+        }
+
+        private async UniTaskVoid StartLifetimeTimer(CancellationToken ct)
+        {
+            bool canceled = await UniTask.Delay(TimeSpan.FromSeconds(lifetime), cancellationToken: ct).SuppressCancellationThrow();
+            if (!canceled && gameObject.activeSelf)
             {
-                float finalDamage = isCritical ? damage * criticalDamageMultiplier : damage;
-                health.TakeDamage(finalDamage);
-
-                if (effectManager != null)
-                {
-                    if (applyPoison)
-                        effectManager.ApplyEffect(new Poison(other.gameObject, poisonDuration, poisonDamagePerSecond));
-                    if (applyVulnerability)
-                        effectManager.ApplyEffect(new Vulnerability(other.gameObject, vulnerabilityDuration, damageMultiplier));
-                }
+                ReturnToPool();
             }
-            ReturnToPool();
-            return; // ¡Importante! Salimos del método
         }
-        
-        // --- Comprobación 2: ¿Es una capa de OBSTÁCULO? ---
-        // (Solo se ejecuta si la Comprobación 1 falló)
-        if ((obstacleLayers.value & otherLayer) != 0) // <--- ¡NUEVO!
+
+        private void ReturnToPool()
         {
-            // No hacemos daño, no aplicamos efectos.
-            // Simplemente volvemos al pool.
-            ReturnToPool();
+            if (!gameObject.activeSelf) return;
+
+            if (poolService != null)
+            {
+                poolService.Return(gameObject);
+            }
+            else if (PoolManager.Instance != null && !string.IsNullOrEmpty(poolTag))
+            {
+                PoolManager.Instance.ReturnToPool(poolTag, gameObject);
+            }
+            else
+            {
+                gameObject.SetActive(false);
+            }
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            int otherLayer = 1 << other.gameObject.layer;
+
+            if ((damageableLayers.value & otherLayer) != 0)
+            {
+                if (other.TryGetComponent<Health>(out Health health))
+                {
+                    float finalDamage = isCritical ? damage * criticalDamageMultiplier : damage;
+                    health.TakeDamage(finalDamage);
+
+                    if (other.TryGetComponent<StatusEffectManager>(out var effectManager))
+                    {
+                        ApplyStatusEffects(effectManager, other.gameObject);
+                    }
+                }
+                ReturnToPool();
+                return;
+            }
+
+            if ((obstacleLayers.value & otherLayer) != 0)
+            {
+                ReturnToPool();
+            }
+        }
+
+        private void ApplyStatusEffects(StatusEffectManager effectManager, GameObject target)
+        {
+            if (applyPoison)
+            {
+                effectManager.ApplyEffect(new Poison(target, poisonDuration, poisonDamagePerSecond));
+            }
+            if (applyVulnerability)
+            {
+                effectManager.ApplyEffect(new Vulnerability(target, vulnerabilityDuration, damageMultiplier));
+            }
         }
     }
 }

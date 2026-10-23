@@ -1,82 +1,78 @@
 using UnityEngine;
-using System.Collections;
+using DG.Tweening;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using TriInspector;
+using VContainer;
 
-[RequireComponent(typeof(Renderer))]
-public class HitFeedback : MonoBehaviour
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    [Header("Efecto Squash & Stretch")]
-    [Tooltip("El color al que flashea el enemigo al ser golpeado.")]
-    [SerializeField] private Color hitColor = Color.red;
-    [Tooltip("Duración total del flash y el estiramiento (en segundos).")]
-    [SerializeField] private float effectDuration = 0.15f;
-    [Tooltip("Cuánto se estira verticalmente (ej. 1.3 = 130%).")]
-    [SerializeField] private float stretchAmount = 1.3f;
-    [Tooltip("Cuánto se contrae horizontalmente (ej. 0.8 = 80%).")]
-    [SerializeField] private float squashAmount = 0.8f;
-
-    [Header("Efecto de Partículas (Pooling)")]
-    [Tooltip("El 'Tag' (Etiqueta) de la partícula en el PoolManager. " +
-             "Debe coincidir con el PoolManager y el script ReturnToPool.")]
-    [SerializeField] private string particlePoolTag = "HitEffect"; 
-
-    private Renderer enemyRenderer;
-    private Color originalColor;
-    private Vector3 originalScale;
-    private Coroutine activeHitRoutine;
-
-    private void Awake()
+    [RequireComponent(typeof(Renderer))]
+    public class HitFeedback : MonoBehaviour
     {
-        enemyRenderer = GetComponent<Renderer>();
-        originalColor = enemyRenderer.material.color;
-        originalScale = transform.localScale;
-    }
+        [Title("Squash & Stretch Feedback (DOTween)")]
+        [SerializeField] private Color hitColor = Color.red;
+        [SerializeField] private float effectDuration = 0.15f;
+        [SerializeField] private Vector3 punchScale = new Vector3(-0.2f, 0.3f, -0.2f);
 
-    public void PlayEffect()
-    {
-        // Detener corrutina anterior si existe
-        if (activeHitRoutine != null)
+        [Title("VFX Pooling")]
+        [SerializeField] private string particlePoolTag = "HitEffect";
+
+        private Renderer enemyRenderer;
+        private Color originalColor;
+        private IPoolService poolService;
+        private Tween activeColorTween;
+        private Tween activeScaleTween;
+
+        [Inject]
+        public void Construct(IPoolService poolService)
         {
-            StopCoroutine(activeHitRoutine);
-            ResetVisuals();
+            this.poolService = poolService;
         }
 
-        // --- ¡¡LÓGICA DE POOLING CORREGIDA!! ---
-        if (PoolManager.Instance != null && !string.IsNullOrEmpty(particlePoolTag))
+        private void Awake()
         {
-            // ¡Llamada corregida! Usamos "SpawnFromPool" 
-            // como se llama en tu script
-            PoolManager.Instance.SpawnFromPool(particlePoolTag, transform.position, Quaternion.identity);
+            enemyRenderer = GetComponent<Renderer>();
+            originalColor = enemyRenderer.material.color;
         }
-        else
+
+        private void OnDestroy()
         {
-            if (PoolManager.Instance == null)
-                Debug.LogWarning("PoolManager.Instance no encontrado en la escena.");
+            activeColorTween?.Kill();
+            activeScaleTween?.Kill();
         }
-        // -----------------------------------------
 
-        // Iniciar la corrutina de squash/stretch
-        activeHitRoutine = StartCoroutine(HitEffectRoutine());
-    }
+        public void PlayEffect()
+        {
+            SpawnHitParticle();
+            PlayJuiceTweens();
+        }
 
-    private IEnumerator HitEffectRoutine()
-    {
-        // 1. Aplicar el efecto
-        enemyRenderer.material.color = hitColor;
-        transform.localScale = new Vector3(originalScale.x * squashAmount, 
-                                           originalScale.y * stretchAmount, 
-                                           originalScale.z * squashAmount);
+        private void SpawnHitParticle()
+        {
+            if (string.IsNullOrEmpty(particlePoolTag)) return;
 
-        // 2. Esperar
-        yield return new WaitForSecondsRealtime(effectDuration);
+            if (poolService != null)
+            {
+                poolService.Spawn(particlePoolTag, transform.position, Quaternion.identity);
+            }
+            else if (PoolManager.Instance != null)
+            {
+                PoolManager.Instance.SpawnFromPool(particlePoolTag, transform.position, Quaternion.identity);
+            }
+        }
 
-        // 3. Revertir
-        ResetVisuals();
-        activeHitRoutine = null;
-    }
+        private void PlayJuiceTweens()
+        {
+            activeScaleTween?.Kill(true);
+            activeColorTween?.Kill(true);
 
-    private void ResetVisuals()
-    {
-        enemyRenderer.material.color = originalColor;
-        transform.localScale = originalScale;
+            activeScaleTween = transform.DOPunchScale(punchScale, effectDuration, 10, 1f)
+                .SetLink(gameObject);
+
+            activeColorTween = enemyRenderer.material.DOColor(hitColor, effectDuration * 0.5f)
+                .SetLoops(2, LoopType.Yoyo)
+                .SetLink(gameObject)
+                .OnComplete(() => enemyRenderer.material.color = originalColor);
+        }
     }
 }

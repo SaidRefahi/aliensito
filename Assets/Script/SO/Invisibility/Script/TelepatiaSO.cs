@@ -1,37 +1,62 @@
 using UnityEngine;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using TriInspector;
 
-[CreateAssetMenu(fileName = "Telepatia", menuName = "Habilidades/Invisibilidad/Telepatia")]
-public class TelepatiaSO : InvisibilitySO
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    [Header("Configuración de Telepatía")]
-    public float criticalBuffDuration = 3f;
-    
-    public override bool Execute(GameObject user)
+    [CreateAssetMenu(fileName = "Telepatia", menuName = "Habilidades/Invisibilidad/Telepatia")]
+    public class TelepatiaSO : InvisibilitySO
     {
-        // 1. Ejecutar la lógica base (¡que ahora tiene el cooldown y el anti-spam!)
-        bool executed = base.Execute(user);
+        [Title("Telepathy Settings")]
+        [SerializeField] private float criticalBuffDuration = 3f;
 
-        // 2. Si la base tuvo éxito (no estaba en CD, no estaba ya activo)...
-        if (executed)
+        public float CriticalBuffDuration => criticalBuffDuration;
+
+        public override bool Execute(GameObject user)
         {
-            // ...entonces busca el "runner" que la base acaba de crear.
-            var runner = user.GetComponent<InvisibilitySO.InvisibilityRunner>();
-            if (runner != null)
+            bool executed = base.Execute(user);
+            if (executed)
             {
-                // Y añade tu lógica extra.
-                runner.OnInvisibilityEnd += () => ApplyCriticalBuff(user);
+                var runner = user.GetComponent<InvisibilitySO.InvisibilityRunner>();
+                if (runner != null)
+                {
+                    var listener = user.GetComponent<TelepatiaListener>();
+                    if (listener == null)
+                    {
+                        listener = user.AddComponent<TelepatiaListener>();
+                    }
+                    listener.Setup(runner, criticalBuffDuration);
+                }
             }
+            return executed;
         }
 
-        // 3. Devuelve el resultado de la ejecución base.
-        return executed;
-    }
-
-    private void ApplyCriticalBuff(GameObject user)
-    {
-        if (user.TryGetComponent<StatusEffectManager>(out var effectManager))
+        private class TelepatiaListener : MonoBehaviour
         {
-            effectManager.ApplyEffect(new CriticalBuff(user, criticalBuffDuration));
+            private InvisibilitySO.InvisibilityRunner activeRunner;
+            private float buffDuration;
+
+            public void Setup(InvisibilitySO.InvisibilityRunner runner, float duration)
+            {
+                activeRunner = runner;
+                buffDuration = duration;
+                activeRunner.OnInvisibilityEnd += HandleInvisibilityEnd;
+            }
+
+            private void HandleInvisibilityEnd()
+            {
+                if (activeRunner != null)
+                {
+                    activeRunner.OnInvisibilityEnd -= HandleInvisibilityEnd;
+                }
+
+                if (TryGetComponent<StatusEffectManager>(out var effectManager))
+                {
+                    effectManager.ApplyEffect(new CriticalBuff(gameObject, buffDuration));
+                }
+
+                Destroy(this);
+            }
         }
     }
 }

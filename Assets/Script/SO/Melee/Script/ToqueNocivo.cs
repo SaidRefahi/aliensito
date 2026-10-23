@@ -1,29 +1,36 @@
 using UnityEngine;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using TriInspector;
 
-[CreateAssetMenu(fileName = "Toque Nocivo", menuName = "Habilidades/Melee/Toque Nocivo")]
-public class ToqueNocivo : MeleeAbilitySO
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    [Header("Toque Nocivo Settings")]
-    public float poisonDamagePerSecond = 2f;
-    public float poisonDuration = 5f;
-
-    // --- ¡FIRMA MODIFICADA! ---
-    public override void PerformMelee(GameObject user, float finalDamage, LayerMask damageLayers)
+    [CreateAssetMenu(fileName = "Toque Nocivo", menuName = "Habilidades/Melee/Toque Nocivo")]
+    public class ToqueNocivo : MeleeAbilitySO
     {
-        Transform source = (aimSource != null) ? aimSource : user.transform;
-        
-        // --- ¡LÍNEA MODIFICADA! ---
-        Collider[] hits = Physics.OverlapSphere(source.position, range, damageLayers);
+        [Title("Toque Nocivo Settings")]
+        [SerializeField] private float poisonDamagePerSecond = 2f;
+        [SerializeField] private float poisonDuration = 5f;
 
-        foreach (var hit in hits)
+        public float PoisonDamagePerSecond => poisonDamagePerSecond;
+        public float PoisonDuration => poisonDuration;
+
+        public override void PerformMelee(GameObject user, float finalDamage, LayerMask damageLayers)
         {
-            if (hit.gameObject == user) continue;
-            if (hit.TryGetComponent<Health>(out Health health))
+            Transform source = (AimSource != null) ? AimSource : user.transform;
+            int hits = Physics.OverlapSphereNonAlloc(source.position, Range, MeleeHitBuffer, damageLayers);
+
+            for (int i = 0; i < hits; i++)
             {
-                health.TakeDamage(finalDamage);
-                if (hit.TryGetComponent<StatusEffectManager>(out var effectManager))
+                var hit = MeleeHitBuffer[i];
+                if (hit == null || hit.gameObject == user) continue;
+
+                if (hit.TryGetComponent<Health>(out Health health))
                 {
-                    effectManager.ApplyEffect(new Poison(hit.gameObject, poisonDuration, poisonDamagePerSecond));
+                    health.TakeDamage(finalDamage);
+                    if (hit.TryGetComponent<StatusEffectManager>(out var effectManager))
+                    {
+                        effectManager.ApplyEffect(new Poison(hit.gameObject, poisonDuration, poisonDamagePerSecond));
+                    }
                 }
             }
         }

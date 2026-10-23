@@ -5,10 +5,10 @@ using UnityEngine.UI;
 
 public class DropMe : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPointerExitHandler
 {
-	public Image containerImage;
-	public Image receivingImage;
+	[SerializeField] private Image containerImage;
+	[SerializeField] private Image receivingImage;
 	private Color normalColor;
-	public Color highlightColor = Color.yellow;
+	[SerializeField] private Color highlightColor = Color.yellow;
 	
 	public void OnEnable ()
 	{

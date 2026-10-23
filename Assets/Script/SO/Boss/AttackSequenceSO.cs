@@ -1,23 +1,29 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using TriInspector;
 
-// Define qué líneas de mira debe mostrar la IA al telegrafiar este ataque
-public enum TelegraphType
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    None,   // No mostrar líneas
-    Center, // Mostrar solo la línea central
-    Sides,  // Mostrar solo las líneas laterales
-    All     // Mostrar las 3 líneas (Centro, Izquierda, Derecha)
-}
+    public enum TelegraphType
+    {
+        None,
+        Center,
+        Sides,
+        All
+    }
 
-[CreateAssetMenu(fileName = "NewAttackSequence", menuName = "Boss/Attack Sequence")]
-public class AttackSequenceSO : ScriptableObject
-{
-    [Header("Configuración de Ataque")]
-    [Tooltip("La secuencia de habilidades SO a ejecutar, en orden.")]
-    public List<AbilitySO> attacksInSequence;
+    [CreateAssetMenu(fileName = "NewAttackSequence", menuName = "Boss/Attack Sequence")]
+    public class AttackSequenceSO : ScriptableObject
+    {
+        [Title("Attack Sequence Configuration")]
+        [Tooltip("Sequence of ability SOs to execute in order.")]
+        [SerializeField] private List<AbilitySO> attacksInSequence = new List<AbilitySO>();
 
-    [Header("Configuración de Telegrafiado")]
-    [Tooltip("Qué líneas de mira debe mostrar la IA al prepararse para este ataque.")]
-    public TelegraphType telegraphType = TelegraphType.Center;
+        [Title("Telegraph Configuration")]
+        [SerializeField] private TelegraphType telegraphType = TelegraphType.Center;
+
+        public IReadOnlyList<AbilitySO> AttacksInSequence => attacksInSequence;
+        public TelegraphType TelegraphType => telegraphType;
+    }
 }

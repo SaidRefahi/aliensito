@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 public class PanelManager : MonoBehaviour {
 
-	public Animator initiallyOpen;
+	[SerializeField] private Animator initiallyOpen;
 
 	private int m_OpenParameterId;
 	private Animator m_Open;

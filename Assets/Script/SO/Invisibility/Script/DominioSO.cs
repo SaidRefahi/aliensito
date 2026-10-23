@@ -1,83 +1,73 @@
 using UnityEngine;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using TriInspector;
 
-[CreateAssetMenu(fileName = "Dominio", menuName = "Habilidades/Invisibility/Dominio")]
-public class DominioSO : InvisibilitySO
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    [Header("Configuración de Dominio")]
-    public float auraRadius = 6f;
-    public float poisonDamagePerSecond = 1f;
-    public float poisonDuration = 3f;
-
-    [Header("Configuración de VFX")]
-    public string vfxPoolTag = "DominioVFX"; 
-
-    public override bool Execute(GameObject user)
+    [CreateAssetMenu(fileName = "Dominio", menuName = "Habilidades/Invisibilidad/Dominio")]
+    public class DominioSO : InvisibilitySO
     {
-        // 1. Ejecutar la lógica base
-        bool executed = base.Execute(user);
+        [Title("Dominio Settings")]
+        [SerializeField] private float auraRadius = 6f;
+        [SerializeField] private float poisonDamagePerSecond = 1f;
+        [SerializeField] private float poisonDuration = 3f;
 
-        // 2. Si la base tuvo éxito...
-        if (executed)
+        [Title("VFX Pool")]
+        [SerializeField] private string vfxPoolTag = "DominioVFX";
+
+        public float AuraRadius => auraRadius;
+        public float PoisonDamagePerSecond => poisonDamagePerSecond;
+        public float PoisonDuration => poisonDuration;
+        public string VfxPoolTag => vfxPoolTag;
+
+        public override bool Execute(GameObject user)
         {
-            // --- ¡LÓGICA DE VFX MODIFICADA! ---
-            GameObject vfxInstance = null; // Variable para guardar el VFX
-            if (PoolManager.Instance != null && !string.IsNullOrEmpty(vfxPoolTag))
+            bool executed = base.Execute(user);
+            if (executed)
             {
-                vfxInstance = PoolManager.Instance.SpawnFromPool(vfxPoolTag, user.transform.position, Quaternion.identity);
-                
-                if (vfxInstance != null)
+                GameObject vfxInstance = null;
+                if (PoolManager.Instance != null && !string.IsNullOrEmpty(vfxPoolTag))
                 {
-                    // Hacemos que el VFX sea hijo del 'user' para que se mueva con él
-                    vfxInstance.transform.SetParent(user.transform); 
-                }
-            }
-            // --- FIN DE LÓGICA MODIFICADA ---
-
-            // ...Obtenemos el TargetingProfile
-            TargetingProfile targeting = user.GetComponent<TargetingProfile>();
-            if (targeting == null)
-            {
-                Debug.LogError($"¡DominioSO: {user.name} no tiene un componente TargetingProfile!");
-                // Si fallamos aquí, debemos apagar el VFX que acabamos de encender
-                if(vfxInstance != null) PoolManager.Instance.ReturnToPool(vfxPoolTag, vfxInstance);
-                return false;
-            }
-
-            // ...Añadimos el componente de aura
-            var aura = user.AddComponent<PoisonAura>();
-            aura.radius = auraRadius;
-            aura.poisonDamage = poisonDamagePerSecond;
-            aura.poisonDuration = poisonDuration;
-            aura.enemyLayers = targeting.DamageableLayers; 
-
-            // ...Buscamos el "runner" que la base acaba de crear
-            var runner = user.GetComponent<InvisibilitySO.InvisibilityRunner>();
-            if (runner != null)
-            {
-                // --- ¡LÓGICA DE EVENTO MODIFICADA! ---
-                // Ahora nos suscribimos a OnEnd para destruir AMBAS cosas: el aura y el VFX.
-                runner.OnInvisibilityEnd += () => 
-                { 
-                    // 1. Destruir el componente de lógica (el aura)
-                    if (aura != null) 
+                    vfxInstance = PoolManager.Instance.SpawnFromPool(vfxPoolTag, user.transform.position, Quaternion.identity);
+                    if (vfxInstance != null)
                     {
-                        GameObject.Destroy(aura); 
+                        vfxInstance.transform.SetParent(user.transform);
                     }
-                    
-                    // 2. Devolver el efecto visual (VFX) al pool
+                }
+
+                TargetingProfile targeting = user.GetComponent<TargetingProfile>();
+                if (targeting == null)
+                {
+                    Debug.LogError($"[DominioSO] {user.name} does not have a TargetingProfile!", user);
                     if (vfxInstance != null && PoolManager.Instance != null)
                     {
-                        // ¡Importante! Si el VFX era hijo, hay que "des-hacerlo"
-                        // para que no se desactive si el jugador se desactiva.
-                        vfxInstance.transform.SetParent(PoolManager.Instance.transform);
                         PoolManager.Instance.ReturnToPool(vfxPoolTag, vfxInstance);
                     }
-                };
-                // --- FIN DE LÓGICA MODIFICADA ---
-            }
-        }
+                    return false;
+                }
 
-        // 3. Devuelve el resultado de la ejecución base.
-        return executed;
+                var aura = user.AddComponent<PoisonAura>();
+                aura.Initialize(auraRadius, poisonDamagePerSecond, poisonDuration, targeting.DamageableLayers);
+
+                InvisibilityRunner runner = user.GetComponent<InvisibilityRunner>();
+                if (runner != null)
+                {
+                    void CleanupAura()
+                    {
+                        runner.OnInvisibilityEnd -= CleanupAura;
+                        if (vfxInstance != null && PoolManager.Instance != null)
+                        {
+                            PoolManager.Instance.ReturnToPool(vfxPoolTag, vfxInstance);
+                        }
+                        if (aura != null)
+                        {
+                            Destroy(aura);
+                        }
+                    }
+                    runner.OnInvisibilityEnd += CleanupAura;
+                }
+            }
+            return executed;
+        }
     }
 }

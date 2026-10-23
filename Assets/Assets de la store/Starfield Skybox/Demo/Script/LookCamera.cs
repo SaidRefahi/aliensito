@@ -1,13 +1,14 @@
+#pragma warning disable 0414
 using UnityEngine;
 using System.Collections;
 
 public class LookCamera : MonoBehaviour 
 {
-    public float speedNormal = 10.0f;
-    public float speedFast   = 50.0f;
+    [SerializeField] private float speedNormal = 10.0f;
+    [SerializeField] private float speedFast   = 50.0f;
 
-    public float mouseSensitivityX = 5.0f;
-	public float mouseSensitivityY = 5.0f;
+    [SerializeField] private float mouseSensitivityX = 5.0f;
+    [SerializeField] private float mouseSensitivityY = 5.0f;
     
 	float rotY = 0.0f;
     

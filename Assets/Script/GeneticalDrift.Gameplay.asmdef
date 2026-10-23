@@ -1,0 +1,28 @@
+{
+    "name": "GeneticalDrift.Gameplay",
+    "rootNamespace": "SaludosCamaradaHumano.GeneticalDrift.Gameplay",
+    "references": [
+        "GeneticalDrift.Core",
+        "Unity.InputSystem",
+        "Unity.AI.Navigation",
+        "UniTask",
+        "UniTask.DOTween",
+        "VContainer",
+        "DOTween.Modules",
+        "TriInspector",
+        "UnityEngine.UI",
+        "Unity.Behavior",
+        "Unity.Behavior.SerializableGUID"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "DOTween.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

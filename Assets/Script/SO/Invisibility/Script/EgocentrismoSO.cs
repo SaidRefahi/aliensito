@@ -1,67 +1,67 @@
+using System.Collections.Generic;
 using UnityEngine;
-using System.Collections.Generic; // ¡Necesario para el Cooldown!
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using TriInspector;
 
-[CreateAssetMenu(fileName = "Egocentrismo", menuName = "Habilidades/Invisibilidad/Egocentrismo")]
-public class EgocentrismoSO : AbilitySO
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    [Header("Configuración de Nova Aturdidora")]
-    public float radius = 8f;
-    public float stunDuration = 2.5f;
-
-    // --- ¡NUEVA LÍNEA! ---
-    [Header("Configuración de VFX")]
-    public string vfxPoolTag = "EgocentrismoVFX"; // <-- Escribe el Tag de tu PoolManager aquí
-    // --- FIN DE LÍNEA NUEVA ---
-
-    // (Añadimos el tracker de cooldown)
-    private readonly Dictionary<GameObject, float> lastUseTime = new Dictionary<GameObject, float>();
-
-    public override bool Execute(GameObject user)
+    [CreateAssetMenu(fileName = "Egocentrismo", menuName = "Habilidades/Invisibilidad/Egocentrismo")]
+    public class EgocentrismoSO : AbilitySO
     {
-        if (!CanUse(user)) return false; // Comprobar si está en cooldown
+        [Title("Stun Nova Settings")]
+        [SerializeField] private float radius = 8f;
+        [SerializeField] private float stunDuration = 2.5f;
 
-        TargetingProfile targeting = user.GetComponent<TargetingProfile>();
-        if (targeting == null)
+        [Title("VFX Pool Tag")]
+        [SerializeField] private string vfxPoolTag = "EgocentrismoVFX";
+
+        public float Radius => radius;
+        public float StunDuration => stunDuration;
+        public string VfxPoolTag => vfxPoolTag;
+
+        private readonly Dictionary<GameObject, float> lastUseTime = new Dictionary<GameObject, float>();
+        private readonly Collider[] hitColliders = new Collider[16];
+
+        public override bool Execute(GameObject user)
         {
-            Debug.LogError($"¡EgocentrismoSO: {user.name} no tiene un componente TargetingProfile!");
-            return false;
-        }
-        
-        // ¡Usamos el LayerMask del TargetingProfile!
-        Collider[] hits = Physics.OverlapSphere(user.transform.position, radius, targeting.DamageableLayers);
-        
-        foreach (var hit in hits)
-        {
-            if (hit.gameObject == user) continue; // No aturdirse a sí mismo
-            
-            if (hit.TryGetComponent<StatusEffectManager>(out var effectManager))
+            if (!CanUse(user)) return false;
+
+            TargetingProfile targeting = user.GetComponent<TargetingProfile>();
+            if (targeting == null)
             {
-                effectManager.ApplyEffect(new Stun(hit.gameObject, stunDuration));
+                Debug.LogError($"[EgocentrismoSO] {user.name} does not have a TargetingProfile!", user);
+                return false;
             }
-        }
-        
-        lastUseTime[user] = Time.time; // Registrar el uso para el cooldown
 
-        // --- ¡NUEVAS LÍNEAS! ---
-        // Disparar el VFX usando el PoolManager
-        if (PoolManager.Instance != null && !string.IsNullOrEmpty(vfxPoolTag))
-        {
-            // Spawnear en la posición del usuario, sin rotación específica
-            PoolManager.Instance.SpawnFromPool(vfxPoolTag, user.transform.position, Quaternion.identity);
-        }
-        // --- FIN DE LÍNEAS NUEVAS ---
+            int hitCount = Physics.OverlapSphereNonAlloc(user.transform.position, radius, hitColliders, targeting.DamageableLayers);
+            for (int i = 0; i < hitCount; i++)
+            {
+                var hit = hitColliders[i];
+                if (hit == null || hit.gameObject == user) continue;
 
-        return true;
-    }
-    
-    private bool CanUse(GameObject user)
-    {
-        if (!lastUseTime.TryGetValue(user, out float last))
-        {
-            return true; // Nunca se ha usado
+                if (hit.TryGetComponent<StatusEffectManager>(out var effectManager))
+                {
+                    effectManager.ApplyEffect(new Stun(hit.gameObject, stunDuration));
+                }
+            }
+
+            lastUseTime[user] = Time.time;
+
+            if (PoolManager.Instance != null && !string.IsNullOrEmpty(vfxPoolTag))
+            {
+                PoolManager.Instance.SpawnFromPool(vfxPoolTag, user.transform.position, Quaternion.identity);
+            }
+
+            return true;
         }
-        
-        // Comprueba si el tiempo actual ha superado el último uso + cooldown
-        return Time.time >= last + cooldown;
+
+        private bool CanUse(GameObject user)
+        {
+            if (!lastUseTime.TryGetValue(user, out float lastTime))
+            {
+                return true;
+            }
+            return Time.time >= lastTime + Cooldown;
+        }
     }
 }

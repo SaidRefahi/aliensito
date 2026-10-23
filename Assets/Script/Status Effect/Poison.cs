@@ -1,38 +1,34 @@
-// Assets/Script/StatusEffects/Poison.cs
 using UnityEngine;
 
-public class Poison : StatusEffect
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    private readonly float damagePerTick;
-    private float tickTimer;
-
-    public Poison(GameObject target, float duration, float dps) : base(target, duration)
+    public class Poison : StatusEffect
     {
-        this.damagePerTick = dps;
-    }
+        private readonly float damagePerTick;
+        private float tickTimer;
 
-    public override void OnApply()
-    {
-        Debug.Log($"<color=#9400D3>{targetObject.name} has been POISONED.</color>");
-    }
-
-    public override void Tick(float deltaTime)
-    {
-        base.Tick(deltaTime); // Resta la duración total
-        
-        tickTimer += deltaTime;
-        if (tickTimer >= 1f) // Aplica daño cada 1 segundo
+        public Poison(GameObject target, float duration, float dps) : base(target, duration)
         {
-            tickTimer -= 1f;
-            if (targetHealth != null && !targetHealth.IsDead())
+            damagePerTick = dps;
+        }
+
+        public override void OnApply() { }
+
+        public override void Tick(float deltaTime)
+        {
+            base.Tick(deltaTime);
+
+            tickTimer += deltaTime;
+            if (tickTimer >= 1f)
             {
-                targetHealth.TakeDamage(damagePerTick);
+                tickTimer -= 1f;
+                if (targetHealth != null && !targetHealth.IsDead())
+                {
+                    targetHealth.TakeDamage(damagePerTick);
+                }
             }
         }
-    }
 
-    public override void OnEnd()
-    {
-        Debug.Log($"<color=grey>Poison on {targetObject.name} has worn off.</color>");
+        public override void OnEnd() { }
     }
 }

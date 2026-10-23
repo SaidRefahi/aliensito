@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class ScrollDetailTexture : MonoBehaviour
 {
 	public bool uniqueMaterial = false;
-	public Vector2 scrollPerSecond = Vector2.zero;
+	[SerializeField] private Vector2 scrollPerSecond = Vector2.zero;
 
 	Matrix4x4 m_Matrix;
 	Material mCopy;

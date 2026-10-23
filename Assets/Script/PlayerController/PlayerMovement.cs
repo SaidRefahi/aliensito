@@ -1,49 +1,46 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody))]
-public class PlayerMovement : MonoBehaviour
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    [Header("Configuración de Movimiento")]
-    [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float rotationSpeed = 10f;
-
-    private Rigidbody rb;
-    private Vector2 moveInput;
-
-    // Propiedad pública para que el Animator pueda leerla
-    public float CurrentSpeedNormalized => moveInput.magnitude;
-
-    private void Awake()
+    [RequireComponent(typeof(Rigidbody))]
+    public class PlayerMovement : MonoBehaviour
     {
-        rb = GetComponent<Rigidbody>();
-        rb.freezeRotation = true;
-    }
+        [Header("Movement Settings")]
+        [SerializeField] private float moveSpeed = 5f;
+        [SerializeField] private float rotationSpeed = 10f;
 
-    private void FixedUpdate()
-    {
-        HandleMovement();
-    }
+        private Rigidbody rb;
+        private Vector2 moveInput;
 
-    /// <summary>
-    /// Este método público es llamado por el PlayerController (Input)
-    /// </summary>
-    public void SetMoveInput(Vector2 input)
-    {
-        moveInput = input;
-    }
+        public float CurrentSpeedNormalized => moveInput.magnitude;
 
-    private void HandleMovement()
-    {
-        Vector3 move = new Vector3(moveInput.x, 0f, moveInput.y);
-        
-        if (move.sqrMagnitude > 0.0001f) // Más eficiente que .magnitude
+        private void Awake()
         {
-            // Movimiento
-            rb.MovePosition(rb.position + move * moveSpeed * Time.fixedDeltaTime);
-            
-            // Rotación
-            Quaternion targetRot = Quaternion.LookRotation(move.normalized, Vector3.up);
-            rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRot, rotationSpeed * Time.fixedDeltaTime));
+            rb = GetComponent<Rigidbody>();
+            rb.freezeRotation = true;
+        }
+
+        private void FixedUpdate()
+        {
+            HandleMovement();
+        }
+
+        public void SetMoveInput(Vector2 input)
+        {
+            moveInput = input;
+        }
+
+        private void HandleMovement()
+        {
+            Vector3 move = new Vector3(moveInput.x, 0f, moveInput.y);
+
+            if (move.sqrMagnitude > 0.0001f)
+            {
+                rb.MovePosition(rb.position + move * (moveSpeed * Time.fixedDeltaTime));
+
+                Quaternion targetRot = Quaternion.LookRotation(move.normalized, Vector3.up);
+                rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRot, rotationSpeed * Time.fixedDeltaTime));
+            }
         }
     }
 }

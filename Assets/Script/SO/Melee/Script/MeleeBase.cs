@@ -1,23 +1,25 @@
 using UnityEngine;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
 
-[CreateAssetMenu(fileName = "Ataque Melee Básico", menuName = "Habilidades/Ataque Melee/Básico")]
-public class MeleeBase : MeleeAbilitySO
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-
-    public override void PerformMelee(GameObject user, float finalDamage, LayerMask damageLayers)
+    [CreateAssetMenu(fileName = "Ataque Melee Básico", menuName = "Habilidades/Ataque Melee/Básico")]
+    public class MeleeBase : MeleeAbilitySO
     {
-        Transform source = (aimSource != null) ? aimSource : user.transform;
-        
-
-        Collider[] hits = Physics.OverlapSphere(source.position, range, damageLayers);
-
-        foreach (var hit in hits)
+        public override void PerformMelee(GameObject user, float finalDamage, LayerMask damageLayers)
         {
-            if (hit.gameObject == user) continue; // No te pegues a ti mismo
+            Transform source = (AimSource != null) ? AimSource : user.transform;
+            int hits = Physics.OverlapSphereNonAlloc(source.position, Range, MeleeHitBuffer, damageLayers);
 
-            if (hit.TryGetComponent<Health>(out Health health))
+            for (int i = 0; i < hits; i++)
             {
-                health.TakeDamage(finalDamage);
+                var hit = MeleeHitBuffer[i];
+                if (hit == null || hit.gameObject == user) continue;
+
+                if (hit.TryGetComponent<Health>(out Health health))
+                {
+                    health.TakeDamage(finalDamage);
+                }
             }
         }
     }

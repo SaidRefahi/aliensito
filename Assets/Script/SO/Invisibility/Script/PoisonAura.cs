@@ -1,31 +1,50 @@
 using UnityEngine;
 
-public class PoisonAura : MonoBehaviour
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    public float radius;
-    public float poisonDamage;
-    public float poisonDuration;
-    public LayerMask enemyLayers;
-    private float tickTimer;
-
-    void Update()
+    public class PoisonAura : MonoBehaviour
     {
-        tickTimer += Time.deltaTime;
-        if (tickTimer >= 1f) // Aplica el veneno a los enemigos cercanos cada segundo.
+        [SerializeField] private float radius;
+        [SerializeField] private float poisonDamage;
+        [SerializeField] private float poisonDuration;
+        [SerializeField] private LayerMask enemyLayers;
+
+        public float Radius => radius;
+        public float PoisonDamage => poisonDamage;
+        public float PoisonDuration => poisonDuration;
+        public LayerMask EnemyLayers => enemyLayers;
+
+        private float tickTimer;
+        private readonly Collider[] hitColliders = new Collider[16];
+
+        public void Initialize(float radius, float damage, float duration, LayerMask layers)
         {
-            tickTimer -= 1f;
-            ApplyPoisonToNearby();
+            this.radius = radius;
+            this.poisonDamage = damage;
+            this.poisonDuration = duration;
+            this.enemyLayers = layers;
         }
-    }
 
-    void ApplyPoisonToNearby()
-    {
-        Collider[] hits = Physics.OverlapSphere(transform.position, radius, enemyLayers);
-        foreach (var hit in hits)
+        private void Update()
         {
-            if (hit.TryGetComponent<StatusEffectManager>(out var effectManager))
+            tickTimer += Time.deltaTime;
+            if (tickTimer >= 1f)
             {
-                effectManager.ApplyEffect(new Poison(hit.gameObject, poisonDuration, poisonDamage));
+                tickTimer -= 1f;
+                ApplyPoisonToNearby();
+            }
+        }
+
+        private void ApplyPoisonToNearby()
+        {
+            int hits = Physics.OverlapSphereNonAlloc(transform.position, radius, hitColliders, enemyLayers);
+            for (int i = 0; i < hits; i++)
+            {
+                var hit = hitColliders[i];
+                if (hit != null && hit.TryGetComponent<StatusEffectManager>(out var effectManager))
+                {
+                    effectManager.ApplyEffect(new Poison(hit.gameObject, poisonDuration, poisonDamage));
+                }
             }
         }
     }

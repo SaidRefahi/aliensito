@@ -1,0 +1,19 @@
+{
+    "name": "GeneticalDrift.Core",
+    "rootNamespace": "SaludosCamaradaHumano.GeneticalDrift.Core",
+    "references": [
+        "VContainer",
+        "UniTask",
+        "TriInspector",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

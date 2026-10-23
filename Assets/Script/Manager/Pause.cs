@@ -1,102 +1,191 @@
-using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
-using UnityEngine.EventSystems; // <--- ¡NUEVO! Para controlar la selección
+using UnityEngine.EventSystems;
+using DG.Tweening;
+using VContainer;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using TriInspector;
 
-public class PauseMenu : MonoBehaviour
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    [Header("Configuración del Menú")]
-    public GameObject MenuPause;
-    
-    [Tooltip("Arrastra aquí el botón 'Reanudar' o el primer botón del menú")]
-    [SerializeField] private GameObject firstSelectedButton; // <--- ¡NUEVO!
-
-    [Header("Input")]
-    [SerializeField] private InputActionReference pauseAction;
-    [SerializeField] private PlayerInput playerInput; // <--- ¡NUEVO!
-    
-    public bool isPaused = false;
-
-    private void Awake()
+    public class PauseMenu : MonoBehaviour
     {
-        isPaused = false;
-        
-        // <--- NUEVO: Auto-asignación del PlayerInput ---
-        if (playerInput == null)
+        [Title("Menu Configuration")]
+        [SerializeField] private GameObject menuPause;
+        [SerializeField] private GameObject firstSelectedButton;
+        [SerializeField] private int mainMenuSceneIndex = 0;
+
+        [Title("Input Bindings")]
+        [SerializeField] private InputActionReference pauseAction;
+        [SerializeField] private PlayerInput playerInput;
+
+        [Inject] private IGameStateService gameStateService;
+
+        private bool isPaused = false;
+        private CanvasGroup menuCanvasGroup;
+
+        public bool IsPaused => isPaused;
+
+        private void Awake()
         {
-            // Busca el PlayerInput en la escena (asumiendo que solo hay uno)
-            playerInput = FindFirstObjectByType<PlayerInput>();
+            isPaused = false;
+
+            if (menuPause != null)
+            {
+                menuCanvasGroup = menuPause.GetComponent<CanvasGroup>();
+                menuPause.SetActive(false);
+            }
+
+            if (playerInput == null)
+            {
+                playerInput = FindFirstObjectByType<PlayerInput>();
+            }
+
+            if (gameStateService == null)
+            {
+                gameStateService = GameManager.Instance;
+            }
         }
-        if (playerInput == null) Debug.LogError("¡PauseMenu no encontró el PlayerInput!");
-        // --- Fin del bloque nuevo ---
-    }
 
-    private void OnEnable()
-    {
-        pauseAction.action.performed += TogglePause; // <--- MODIFICADO (forma más segura)
-    }
-
-    private void OnDisable()
-    {
-        pauseAction.action.performed -= TogglePause; // <--- MODIFICADO (forma más segura)
-    }
-
-    public void TogglePause(InputAction.CallbackContext context) // <--- MODIFICADO
-    {
-        // Solo reacciona si la acción se realizó (botón presionado)
-        if (!context.performed) return; 
-        
-        TogglePause(); // Llama a la lógica principal
-    }
-
-    public void TogglePause() // Lógica pública principal
-    {
-        if (isPaused)
+        private void OnEnable()
         {
-            reanudar();
+            if (pauseAction != null && pauseAction.action != null)
+            {
+                pauseAction.action.performed -= HandlePausePerformed;
+                pauseAction.action.performed += HandlePausePerformed;
+                pauseAction.action.Enable();
+            }
         }
-        else
+
+        private void OnDisable()
         {
-            pausar();
+            if (pauseAction != null && pauseAction.action != null)
+            {
+                pauseAction.action.performed -= HandlePausePerformed;
+            }
         }
-    }
 
-    public void reanudar()
-    {
-        MenuPause.SetActive(false);
-        Time.timeScale = 1f;
-        isPaused = false;
-        
-        // --- ¡NUEVO! Devolvemos el control al Action Map "Player" ---
-        playerInput.SwitchCurrentActionMap("Player");
-        
-        // --- ¡NUEVO! Limpiamos la selección del EventSystem ---
-        EventSystem.current.SetSelectedGameObject(null);
-    }
+        private void HandlePausePerformed(InputAction.CallbackContext context)
+        {
+            if (!context.performed) return;
+            TogglePause();
+        }
 
-    public void pausar()
-    {
-        MenuPause.SetActive(true);
-        Time.timeScale = 0f;
-        isPaused = true;
-        
-        // --- ¡NUEVO! Cambiamos al Action Map "UI" ---
-        playerInput.SwitchCurrentActionMap("UI");
-        
-        // --- ¡NUEVO! Seleccionamos el primer botón para el joystick ---
-        EventSystem.current.SetSelectedGameObject(null); // Limpia por si acaso
-        EventSystem.current.SetSelectedGameObject(firstSelectedButton);
-    }
+        public void TogglePause()
+        {
+            if (isPaused)
+            {
+                Resume();
+            }
+            else
+            {
+                Pause();
+            }
+        }
 
-    public void irAlMenu()
-    {
-        Time.timeScale = 1f;
-        
-        // --- ¡NUEVO! Asegúrate de volver al mapa "Player" antes de cambiar de escena ---
-        // (El menú principal probablemente volverá a cambiarlo a "UI", pero esto es seguro)
-        playerInput.SwitchCurrentActionMap("Player"); 
-        
-        SceneManager.LoadScene(0);
+        public void Resume()
+        {
+            isPaused = false;
+
+            if (gameStateService != null)
+            {
+                gameStateService.SetPause(false);
+            }
+            else
+            {
+                Time.timeScale = 1f;
+            }
+
+            if (menuPause != null)
+            {
+                if (menuCanvasGroup != null)
+                {
+                    menuCanvasGroup.DOKill();
+                    menuCanvasGroup.DOFade(0f, 0.2f)
+                        .SetUpdate(true)
+                        .OnComplete(() =>
+                        {
+                            if (menuPause != null) menuPause.SetActive(false);
+                        });
+                }
+                else
+                {
+                    menuPause.SetActive(false);
+                }
+            }
+
+            if (playerInput != null)
+            {
+                playerInput.SwitchCurrentActionMap("Player");
+            }
+
+            if (EventSystem.current != null)
+            {
+                EventSystem.current.SetSelectedGameObject(null);
+            }
+        }
+
+        public void Pause()
+        {
+            isPaused = true;
+
+            if (gameStateService != null)
+            {
+                gameStateService.SetPause(true);
+            }
+            else
+            {
+                Time.timeScale = 0f;
+            }
+
+            if (menuPause != null)
+            {
+                menuPause.SetActive(true);
+                menuPause.transform.DOKill();
+                menuPause.transform.localScale = Vector3.one * 0.95f;
+                menuPause.transform.DOScale(Vector3.one, 0.2f)
+                    .SetEase(Ease.OutBack)
+                    .SetUpdate(true);
+
+                if (menuCanvasGroup != null)
+                {
+                    menuCanvasGroup.DOKill();
+                    menuCanvasGroup.alpha = 0f;
+                    menuCanvasGroup.DOFade(1f, 0.2f).SetUpdate(true);
+                }
+            }
+
+            if (playerInput != null)
+            {
+                playerInput.SwitchCurrentActionMap("UI");
+            }
+
+            if (EventSystem.current != null)
+            {
+                EventSystem.current.SetSelectedGameObject(null);
+                if (firstSelectedButton != null)
+                {
+                    EventSystem.current.SetSelectedGameObject(firstSelectedButton);
+                }
+            }
+        }
+
+        public void GoToMainMenu()
+        {
+            Time.timeScale = 1f;
+
+            if (playerInput != null)
+            {
+                playerInput.SwitchCurrentActionMap("Player");
+            }
+
+            SceneManager.LoadScene(mainMenuSceneIndex);
+        }
+
+        // Backward compatibility aliases for existing scene Inspector bindings
+        public void reanudar() => Resume();
+        public void pausar() => Pause();
+        public void irAlMenu() => GoToMainMenu();
     }
 }

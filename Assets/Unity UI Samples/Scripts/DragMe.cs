@@ -6,7 +6,7 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Image))]
 public class DragMe : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-	public bool dragOnSurfaces = true;
+	[SerializeField] private bool dragOnSurfaces = true;
 	
 	private Dictionary<int,GameObject> m_DraggingIcons = new Dictionary<int, GameObject>();
 	private Dictionary<int, RectTransform> m_DraggingPlanes = new Dictionary<int, RectTransform>();

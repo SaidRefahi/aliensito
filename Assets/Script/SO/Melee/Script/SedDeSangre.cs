@@ -1,28 +1,35 @@
 using UnityEngine;
+using SaludosCamaradaHumano.GeneticalDrift.Core;
+using TriInspector;
 
-[CreateAssetMenu(fileName = "Sed de Sangre", menuName = "Habilidades/Melee/Sed de Sangre")]
-public class SedDeSangre : MeleeAbilitySO
+namespace SaludosCamaradaHumano.GeneticalDrift.Gameplay
 {
-    [Header("Sed de Sangre Settings")]
-    [Range(0, 1)] public float healPercent = 0.1f;
-
-    // --- ¡FIRMA MODIFICADA! ---
-    public override void PerformMelee(GameObject user, float finalDamage, LayerMask damageLayers)
+    [CreateAssetMenu(fileName = "Sed de Sangre", menuName = "Habilidades/Melee/Sed de Sangre")]
+    public class SedDeSangre : MeleeAbilitySO
     {
-        Transform source = (aimSource != null) ? aimSource : user.transform;
-        
-        // --- ¡LÍNEA MODIFICADA! ---
-        Collider[] hits = Physics.OverlapSphere(source.position, range, damageLayers);
-        
-        if (!user.TryGetComponent<Health>(out var userHealth)) return;
+        [Title("Sed de Sangre Settings")]
+        [Range(0f, 1f)]
+        [SerializeField] private float healPercent = 0.1f;
 
-        foreach (var hit in hits)
+        public float HealPercent => healPercent;
+
+        public override void PerformMelee(GameObject user, float finalDamage, LayerMask damageLayers)
         {
-            if (hit.gameObject == user) continue;
-            if (hit.TryGetComponent<Health>(out Health targetHealth))
+            Transform source = (AimSource != null) ? AimSource : user.transform;
+            int hits = Physics.OverlapSphereNonAlloc(source.position, Range, MeleeHitBuffer, damageLayers);
+
+            if (!user.TryGetComponent<Health>(out var userHealth)) return;
+
+            for (int i = 0; i < hits; i++)
             {
-                targetHealth.TakeDamage(finalDamage);
-                userHealth.Heal(finalDamage * healPercent);
+                var hit = MeleeHitBuffer[i];
+                if (hit == null || hit.gameObject == user) continue;
+
+                if (hit.TryGetComponent<Health>(out Health targetHealth))
+                {
+                    targetHealth.TakeDamage(finalDamage);
+                    userHealth.Heal(finalDamage * healPercent);
+                }
             }
         }
     }

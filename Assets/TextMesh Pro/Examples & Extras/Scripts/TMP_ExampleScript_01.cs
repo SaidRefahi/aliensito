@@ -27,9 +27,15 @@ namespace TMPro.Examples
             // Get a reference to the TMP text component if one already exists otherwise add one.
             // This example show the convenience of having both TMP components derive from TMP_Text. 
             if (ObjectType == 0)
-                m_text = GetComponent<TextMeshPro>() ?? gameObject.AddComponent<TextMeshPro>();
+            {
+                m_text = GetComponent<TextMeshPro>();
+                if (m_text == null) m_text = gameObject.AddComponent<TextMeshPro>();
+            }
             else
-                m_text = GetComponent<TextMeshProUGUI>() ?? gameObject.AddComponent<TextMeshProUGUI>();
+            {
+                m_text = GetComponent<TextMeshProUGUI>();
+                if (m_text == null) m_text = gameObject.AddComponent<TextMeshProUGUI>();
+            }
 
             // Load a new font asset and assign it to the text object.
             m_text.font = Resources.Load<TMP_FontAsset>("Fonts & Materials/Anton SDF");
